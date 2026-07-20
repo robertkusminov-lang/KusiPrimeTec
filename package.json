@@ -7,13 +7,13 @@
     "tests"
   ],
   "scripts": {
-    "dev": "npm --prefix app run dev",
+    "dev": "npm run dev --workspace=@kpt/app",
     "dev:8888": "powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/start-web-8888.ps1",
-    "build": "npm --prefix app run build",
-    "typecheck": "npm --prefix app run typecheck",
-    "lint": "npm --prefix app run lint && npm --prefix tests run lint",
-    "test": "npm --prefix tests run test",
-    "smoke": "npm --prefix tests run smoke",
+    "build": "npm run build --workspace=@kpt/app",
+    "typecheck": "npm run typecheck --workspace=@kpt/app",
+    "lint": "npm run lint --workspace=@kpt/app && npm run lint --workspace=@kpt/tests",
+    "test": "npm run test --workspace=@kpt/tests",
+    "smoke": "npm run smoke --workspace=@kpt/tests",
     "supabase:link": "cd api && npx supabase link --project-ref $SUPABASE_PROJECT_REF",
     "supabase:deploy": "cd api && npx supabase db push && powershell -NoProfile -ExecutionPolicy Bypass -File ../scripts/deploy-supabase-functions.ps1"
   }
