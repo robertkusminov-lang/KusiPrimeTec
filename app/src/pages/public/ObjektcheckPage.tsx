@@ -1,6 +1,11 @@
 import { NavLink } from "react-router-dom";
 import { LazySection } from "@/components/ui/LazySection";
-import { OBJECT_CHECK_EXCLUSIONS, OBJECT_CHECK_FEATURES } from "@/data/publicWebsite";
+import {
+  OBJECT_CHECK_EXCLUSIONS,
+  OBJECT_CHECK_FEATURES,
+  OBJECT_CHECK_RESULTS,
+  PUBLIC_OFFER_CONFIG,
+} from "@/data/publicWebsite";
 import { useSeo } from "@/hooks/useSeo";
 import { buildServiceSchema, ORGANIZATION_SCHEMA } from "@/lib/seoData";
 
@@ -9,15 +14,6 @@ const targetUseCases = [
   "Mehrere Kleinthemen sollen vor einer laufenden Betreuung geordnet werden.",
   "Für Eigentum, Verwaltung oder Betrieb braucht es eine klare erste Priorisierung.",
   "Sie möchten erkennen, was KusiPrimeTec direkt übernehmen kann und wo eine Fachfirma nötig ist.",
-] as const;
-
-const customerReceives = [
-  "Kompakte digitale Übersicht",
-  "Sichtbare Auffälligkeiten mit Fotodokumentation",
-  "Priorisierung offener Punkte",
-  "Empfohlene nächste Schritte",
-  "Zuordnung: KusiPrimeTec möglich oder Fachfirma erforderlich",
-  "Betreuungsempfehlung für den weiteren Weg",
 ] as const;
 
 export default function ObjektcheckPage() {
@@ -38,7 +34,7 @@ export default function ObjektcheckPage() {
             name: "ObjektCheck Gewerbe",
             description:
               "Bis zu 90 Minuten Vor-Ort-Begehung mit strukturierter Aufnahme sichtbarer Auffälligkeiten und digitaler Maßnahmenübersicht.",
-            price: 249,
+            price: PUBLIC_OFFER_CONFIG.objectCheck.priceEur,
           },
         ],
       }),
@@ -76,10 +72,8 @@ export default function ObjektcheckPage() {
       <LazySection className="grid gap-4 xl:grid-cols-[0.9fr_1.1fr]" minHeight={260} delayMs={35}>
         <article className="premium-card page-card">
           <p className="text-xs uppercase tracking-[0.12em] text-electric-300">Preis</p>
-          <h2 className="mt-2 text-3xl font-extrabold text-white">249 €</h2>
-          <p className="mt-2 text-sm leading-relaxed text-[var(--text-soft)]">
-            Für größere Objekte, mehrere Standorte oder deutlich erhöhten Aufwand: Preis nach Objektgröße und Aufwand.
-          </p>
+          <h2 className="mt-2 text-3xl font-extrabold text-white">{PUBLIC_OFFER_CONFIG.objectCheck.priceLabel}</h2>
+          <p className="mt-2 text-sm leading-relaxed text-[var(--text-soft)]">{PUBLIC_OFFER_CONFIG.objectCheck.largerObjectNote}</p>
         </article>
 
         <article className="premium-card page-card">
@@ -112,7 +106,7 @@ export default function ObjektcheckPage() {
           <p className="text-xs uppercase tracking-[0.12em] text-electric-300">Ergebnis</p>
           <h2 className="mt-2 text-2xl font-bold text-white">Was Sie danach erhalten</h2>
           <ul className="mt-4 grid gap-2 text-sm text-[var(--text-main)]">
-            {customerReceives.map((item) => (
+            {OBJECT_CHECK_RESULTS.map((item) => (
               <li key={item}>• {item}</li>
             ))}
           </ul>

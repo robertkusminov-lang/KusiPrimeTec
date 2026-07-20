@@ -1,7 +1,7 @@
 import React from "react";
 import { COMPANY_PROFILE } from "@/config/businessRules";
 
-type JsonLdNode = Record<string, unknown>;
+export type JsonLdNode = Record<string, unknown>;
 
 interface SeoInput {
   title: string;
@@ -44,19 +44,19 @@ function ensureJsonLdScript(): HTMLScriptElement {
   return el;
 }
 
-function normalizePath(path: string): string {
+export function normalizePath(path: string): string {
   const raw = String(path || "").trim();
   if (!raw) return "/";
   return raw.startsWith("/") ? raw : `/${raw}`;
 }
 
-function toAbsoluteUrl(pathOrUrl: string): string {
+export function toAbsoluteUrl(pathOrUrl: string): string {
   if (/^https?:\/\//i.test(pathOrUrl)) return pathOrUrl;
   const normalized = normalizePath(pathOrUrl);
   return `${COMPANY_PROFILE.websiteUrl}${normalized}`;
 }
 
-function normalizeStructuredData(structuredData: JsonLdNode | JsonLdNode[]): JsonLdNode {
+export function normalizeStructuredData(structuredData: JsonLdNode | JsonLdNode[]): JsonLdNode {
   if (Array.isArray(structuredData)) {
     return {
       "@context": "https://schema.org",
@@ -65,7 +65,11 @@ function normalizeStructuredData(structuredData: JsonLdNode | JsonLdNode[]): Jso
       ),
     };
   }
-  if (structuredData["@context"]) return structuredData;
+
+  if (structuredData["@context"]) {
+    return structuredData;
+  }
+
   return {
     "@context": "https://schema.org",
     ...structuredData,
@@ -103,10 +107,6 @@ export function useSeo({
     ensureLink("canonical").setAttribute("href", canonicalUrl);
 
     const script = ensureJsonLdScript();
-    if (structuredData) {
-      script.textContent = JSON.stringify(normalizeStructuredData(structuredData));
-    } else {
-      script.textContent = "";
-    }
+    script.textContent = structuredData ? JSON.stringify(normalizeStructuredData(structuredData)) : "";
   }, [canonicalPath, description, image, robots, structuredData, title, type]);
 }

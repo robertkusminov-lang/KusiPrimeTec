@@ -1,7 +1,6 @@
 import { LazySection } from "@/components/ui/LazySection";
-import { BUSINESS_RULES } from "@/config/businessRules";
+import { OBJECT_CARE_PACKAGES, PUBLIC_OFFER_CONFIG } from "@/data/publicWebsite";
 import { PREISE } from "@/data/content";
-import { OBJECT_CARE_PACKAGES } from "@/data/publicWebsite";
 import { useSeo } from "@/hooks/useSeo";
 import { ORGANIZATION_SCHEMA } from "@/lib/seoData";
 
@@ -39,7 +38,7 @@ export default function PreisePage() {
 
         <article className="premium-card page-card">
           <p className="text-xs uppercase tracking-[0.12em] text-electric-300">ObjektCheck Gewerbe</p>
-          <h2 className="mt-2 text-2xl font-bold text-white">249 €</h2>
+          <h2 className="mt-2 text-2xl font-bold text-white">{PUBLIC_OFFER_CONFIG.objectCheck.priceLabel}</h2>
           <p className="mt-3 text-sm leading-relaxed text-[var(--text-soft)]">
             Kostenpflichtiger Einstieg mit strukturierter Aufnahme sichtbarer technischer Auffälligkeiten, Fotodokumentation und Handlungsempfehlung. Für größere Objekte nach Aufwand.
           </p>
@@ -59,8 +58,8 @@ export default function PreisePage() {
         <h2 className="mt-2 text-2xl font-bold text-white md:text-3xl">Pakete für laufende Betreuung</h2>
         <div className="mt-5 grid gap-4 md:grid-cols-2 2xl:grid-cols-4">
           {OBJECT_CARE_PACKAGES.map((item) => (
-            <article key={item.name} className={`rounded-2xl border p-4 ${"featured" in item && item.featured ? "border-electric-300/55 bg-electric-400/10" : "border-[var(--line)] bg-slate-950/35"}`}>
-              {"featured" in item && item.featured ? (
+            <article key={item.id} className={`rounded-2xl border p-4 ${item.featured ? "border-electric-300/55 bg-electric-400/10" : "border-[var(--line)] bg-slate-950/35"}`}>
+              {item.featured ? (
                 <p className="mb-2 inline-flex rounded-full border border-electric-200/45 bg-electric-400/15 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-electric-200">
                   Empfohlen
                 </p>
@@ -85,9 +84,9 @@ export default function PreisePage() {
 
         <article className="premium-card page-card">
           <p className="text-xs uppercase tracking-[0.12em] text-electric-300">Projektkoordination</p>
-          <h2 className="mt-2 text-xl font-bold text-white">Ab {BUSINESS_RULES.projectCoordination.basePercent} % des Projektvolumens</h2>
+          <h2 className="mt-2 text-xl font-bold text-white">{PUBLIC_OFFER_CONFIG.projectCoordination.priceLabel}</h2>
           <p className="mt-3 text-sm leading-relaxed text-[var(--text-soft)]">
-            Bei höherer Komplexität bis zu {BUSINESS_RULES.projectCoordination.maxComplexityPercent} % nach Abstimmung. Fachliche Ausführung, Prüfung und Gewährleistung verbleiben beim beauftragten Fachunternehmen.
+            {PUBLIC_OFFER_CONFIG.projectCoordination.note}
           </p>
         </article>
       </LazySection>

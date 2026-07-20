@@ -1,5 +1,6 @@
 import { NavLink } from "react-router-dom";
 import { LazySection } from "@/components/ui/LazySection";
+import { ABLAUF } from "@/data/content";
 import { BUSINESS_RULES, COMPANY_PROFILE } from "@/config/businessRules";
 import {
   BUSINESS_MODEL_PROMISES,
@@ -7,25 +8,18 @@ import {
   OBJECT_CARE_INCLUDED,
   OBJECT_CARE_PACKAGES,
   OBJECT_CARE_TARGET_GROUPS,
+  OBJECT_CHECK_RESULTS,
   PROBLEM_POINTS,
+  PUBLIC_OFFER_CONFIG,
 } from "@/data/publicWebsite";
 import { useSeo } from "@/hooks/useSeo";
 import { buildServiceSchema, ORGANIZATION_SCHEMA } from "@/lib/seoData";
-
-const workflowSteps = [
-  "Anliegen oder Objekt aufnehmen",
-  "Situation strukturiert prüfen",
-  "Maßnahmen priorisieren",
-  "Direkt bearbeiten oder Fachfirma koordinieren",
-  "Ergebnis dokumentieren",
-  "Offene Punkte nachverfolgen",
-] as const;
 
 const trustSignals = [
   "Persönlicher Ansprechpartner",
   "Rückmeldung innerhalb von 24 Stunden",
   "Dokumentierte Leistungen",
-  "Regionaler Einsatzradius",
+  "30 km Einsatzradius",
   "Klare Leistungsabgrenzung",
 ] as const;
 
@@ -71,7 +65,7 @@ export default function HomePage() {
             name: "ObjektCheck Gewerbe",
             description:
               "Bis zu 90 Minuten Vor-Ort-Begehung mit strukturierter Bestandsaufnahme, Fotodokumentation und Handlungsempfehlung.",
-            price: 249,
+            price: PUBLIC_OFFER_CONFIG.objectCheck.priceEur,
           },
         ],
       }),
@@ -94,7 +88,7 @@ export default function HomePage() {
             <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
               <NavLink
                 to="/objektbetreuung-anfrage?anliegen=objektbetreuung"
-                className="btn-primary-premium cta-pulse inline-flex min-h-[54px] items-center justify-center rounded-full px-6 py-3 text-sm font-semibold"
+                className="btn-primary-premium inline-flex min-h-[54px] items-center justify-center rounded-full px-6 py-3 text-sm font-semibold"
               >
                 ObjektBetreuung anfragen
               </NavLink>
@@ -178,7 +172,7 @@ export default function HomePage() {
         </div>
       </LazySection>
 
-      <LazySection className="premium-card premium-card-strong page-card-lg" minHeight={380} delayMs={55}>
+      <LazySection className="premium-card premium-card-strong page-card-lg" minHeight={360} delayMs={55}>
         <div className="grid gap-6 xl:grid-cols-[1.05fr_0.95fr] xl:items-start">
           <div className="space-y-4">
             <p className="text-xs uppercase tracking-[0.12em] text-electric-300">Hauptangebot</p>
@@ -201,28 +195,37 @@ export default function HomePage() {
             </NavLink>
           </div>
 
-          <div className="grid gap-3">
-            {OBJECT_CARE_PACKAGES.map((pkg) => (
-              <article
-                key={pkg.name}
-                className={`rounded-2xl border p-4 ${"featured" in pkg && pkg.featured ? "border-electric-300/55 bg-electric-400/10" : "border-[var(--line)] bg-slate-950/35"}`}
-              >
-                <div className="flex flex-wrap items-center justify-between gap-3">
-                  <div>
-                    <p className="text-xs uppercase tracking-[0.12em] text-electric-300">{pkg.name}</p>
-                    <p className="mt-1 text-lg font-semibold text-white">{pkg.priceLabel}</p>
+          <article className="premium-card border border-electric-300/25 p-5">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <p className="text-xs uppercase tracking-[0.12em] text-electric-300">Betreuungsstufen im Überblick</p>
+                <h3 className="mt-2 text-xl font-semibold text-white">Kompakter Einstieg statt vier voller Preiskarten.</h3>
+              </div>
+              <span className="rounded-full border border-electric-200/45 bg-electric-400/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-electric-200">
+                Plus empfohlen
+              </span>
+            </div>
+            <div className="mt-5 grid gap-3">
+              {OBJECT_CARE_PACKAGES.map((pkg) => (
+                <div
+                  key={pkg.id}
+                  className={`rounded-2xl border px-4 py-4 ${pkg.featured ? "border-electric-300/45 bg-electric-400/10" : "border-[var(--line)] bg-slate-950/35"}`}
+                >
+                  <div className="flex flex-wrap items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="text-sm font-semibold text-white">{pkg.name}</p>
+                      <p className="mt-1 text-sm text-electric-100">{pkg.hoursLabel}</p>
+                      <p className="mt-1 text-xs text-[var(--text-soft)]">{pkg.cadenceLabel}</p>
+                    </div>
+                    <p className="text-sm font-semibold text-white">{pkg.priceLabel}</p>
                   </div>
-                  {"featured" in pkg && pkg.featured ? (
-                    <span className="rounded-full border border-electric-200/45 bg-electric-400/15 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-electric-200">
-                      Empfohlen
-                    </span>
-                  ) : null}
                 </div>
-                <p className="mt-3 text-sm text-electric-100">{pkg.hoursLabel}</p>
-                <p className="mt-1 text-sm text-[var(--text-soft)]">{pkg.cadenceLabel}</p>
-              </article>
-            ))}
-          </div>
+              ))}
+            </div>
+            <p className="mt-4 text-sm text-[var(--text-soft)]">
+              Start ab 399 € pro Monat, Plus als empfohlene Hauptvariante und individuelle Modelle für mehrere Standorte oder besondere Betriebszeiten.
+            </p>
+          </article>
         </div>
       </LazySection>
 
@@ -232,17 +235,19 @@ export default function HomePage() {
             <p className="text-xs uppercase tracking-[0.12em] text-electric-300">ObjektCheck</p>
             <h2 className="text-2xl font-bold text-white md:text-3xl">ObjektCheck als strukturierter Einstieg.</h2>
             <p className="text-sm leading-relaxed text-[var(--text-soft)] md:text-base">
-              249 € – strukturierte Aufnahme sichtbarer technischer Auffälligkeiten mit Fotodokumentation, Priorisierung und kompakter Maßnahmenübersicht.
+              {PUBLIC_OFFER_CONFIG.objectCheck.priceLabel} – strukturierte Aufnahme sichtbarer technischer Auffälligkeiten mit Fotodokumentation, Priorisierung und kompakter Maßnahmenübersicht.
             </p>
-            <p className="text-sm leading-relaxed text-[var(--text-soft)]">Für größere oder mehrere Objekte nach Aufwand.</p>
+            <p className="text-sm leading-relaxed text-[var(--text-soft)]">{PUBLIC_OFFER_CONFIG.objectCheck.largerObjectNote}</p>
           </div>
           <div className="premium-card border border-electric-300/25 p-5">
-            <p className="text-xs uppercase tracking-[0.12em] text-electric-300">Leistungsbild</p>
+            <p className="text-xs uppercase tracking-[0.12em] text-electric-300">Was Sie erhalten</p>
             <ul className="mt-4 grid gap-2 text-sm text-[var(--text-main)]">
-              <li>✓ Sichtbare Auffälligkeiten strukturiert aufnehmen</li>
-              <li>✓ Fotodokumentation und Priorisierung</li>
-              <li>✓ Empfehlung: KusiPrimeTec möglich oder Fachfirma erforderlich</li>
-              <li>✓ Betreuungsempfehlung für die nächsten Schritte</li>
+              {OBJECT_CHECK_RESULTS.slice(0, 4).map((item) => (
+                <li key={item} className="flex gap-2">
+                  <span className="text-electric-300">✓</span>
+                  <span>{item}</span>
+                </li>
+              ))}
             </ul>
             <NavLink
               to="/objektbetreuung-anfrage?anliegen=objektcheck"
@@ -258,7 +263,7 @@ export default function HomePage() {
         <p className="text-xs uppercase tracking-[0.12em] text-electric-300">Ablauf</p>
         <h2 className="mt-2 text-2xl font-bold text-white md:text-3xl">Von der Meldung bis zum dokumentierten Ergebnis.</h2>
         <div className="mt-5 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-          {workflowSteps.map((step, index) => (
+          {ABLAUF.map((step, index) => (
             <article key={step} className="premium-card p-4">
               <p className="text-xs font-semibold uppercase tracking-[0.16em] text-electric-300">{String(index + 1).padStart(2, "0")}</p>
               <h3 className="mt-2 text-lg font-semibold text-white">{step}</h3>
@@ -293,7 +298,7 @@ export default function HomePage() {
                     <p className="mt-1 text-xs uppercase tracking-[0.12em] text-electric-300">{card.meta}</p>
                   </div>
                   <span className="rounded-full border border-electric-300/25 bg-electric-400/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-electric-200">
-                    Neutral
+                    Nachweis
                   </span>
                 </div>
                 <div className="mt-4 grid gap-2">

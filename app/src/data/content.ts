@@ -1,4 +1,5 @@
-﻿import { BUSINESS_RULES } from "@/config/businessRules";
+import { BUSINESS_RULES } from "@/config/businessRules";
+import { PUBLIC_OFFER_CONFIG } from "@/data/publicWebsite";
 
 export const NAV_PUBLIC = [
   { href: "/", label: "Startseite" },
@@ -74,18 +75,32 @@ export const ABLAUF = [
 export const PUBLIC_PATHS = [
   {
     href: "/objektbetreuung-anfrage?anliegen=objektbetreuung",
-    title: "ObjektBetreuung oder ObjektCheck anfragen",
-    text: "Für laufende ObjektBetreuung, ObjektCheck Gewerbe, individuelle Betreuungskonzepte und eine unverbindliche Erstabstimmung.",
+    title: "ObjektBetreuung anfragen",
+    text: "Für planbare laufende Betreuung mit festem Ansprechpartner, Betreuungskontingent, Dokumentation und klaren Sammelterminen.",
+    buttonLabel: "ObjektBetreuung anfragen",
+    eyebrow: "Hauptangebot",
+    featured: true,
+  },
+  {
+    href: "/objektbetreuung-anfrage?anliegen=objektcheck",
+    title: "ObjektCheck buchen",
+    text: `Strukturierter Einstieg für ${PUBLIC_OFFER_CONFIG.objectCheck.priceLabel} mit Vor-Ort-Begehung, Fotodokumentation und kompakter Maßnahmenübersicht.`,
+    buttonLabel: "ObjektCheck anfragen",
+    eyebrow: "Einstiegsprodukt",
   },
   {
     href: "/einzelauftrag",
-    title: "Einzelauftrag anfragen",
-    text: "Für operative Einzelthemen, Kleinreparaturen, Störungsaufnahme, Terminwünsche und einmalige Einsätze im Bestand.",
+    title: "Einzelauftrag melden",
+    text: "Für operative Einzelthemen, Störungsaufnahme, Kleinreparaturen und einmalige Einsätze im Bestand innerhalb des bestehenden Ticket-Flows.",
+    buttonLabel: "Einzelauftrag öffnen",
+    eyebrow: "Sekundär",
   },
   {
     href: "/konto/anmelden",
     title: "Kundenlogin",
     text: "Nur für bestehende Kunden mit zugewiesenem Kundenkonto und freigeschalteten Objekten.",
+    buttonLabel: "Kundenlogin öffnen",
+    eyebrow: "Bestandskunden",
   },
 ] as const;
 

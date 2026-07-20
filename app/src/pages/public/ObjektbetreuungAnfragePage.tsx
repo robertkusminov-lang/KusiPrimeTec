@@ -3,6 +3,7 @@ import { useSearchParams } from "react-router-dom";
 import { useSeo } from "@/hooks/useSeo";
 import { apiPost } from "@/lib/api";
 import { toUserMessage } from "@/lib/errors";
+import { SUPPORT_OPTIONS, resolveDesiredSupport } from "@/lib/publicInquiry";
 import { ORGANIZATION_SCHEMA } from "@/lib/seoData";
 
 type InquiryState = {
@@ -18,20 +19,6 @@ type InquiryState = {
   message: string;
 };
 
-const SUPPORT_OPTIONS = [
-  "ObjektBetreuung",
-  "ObjektCheck Gewerbe",
-  "individuelles Betreuungskonzept",
-  "unverbindliche Erstabstimmung",
-] as const;
-
-const QUERY_TO_SUPPORT: Record<string, string> = {
-  objektbetreuung: "ObjektBetreuung",
-  objektcheck: "ObjektCheck Gewerbe",
-  individuell: "individuelles Betreuungskonzept",
-  erstabstimmung: "unverbindliche Erstabstimmung",
-} as const;
-
 function createInitialState(desiredSupport = ""): InquiryState {
   return {
     company_name: "",
@@ -45,11 +32,6 @@ function createInitialState(desiredSupport = ""): InquiryState {
     desired_support: desiredSupport,
     message: "",
   };
-}
-
-function resolveDesiredSupport(value: string | null): string {
-  const normalized = String(value || "").trim().toLowerCase();
-  return QUERY_TO_SUPPORT[normalized] || "";
 }
 
 export default function ObjektbetreuungAnfragePage() {

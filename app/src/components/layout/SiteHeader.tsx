@@ -1,4 +1,4 @@
-﻿import { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { NavLink, useLocation } from "react-router-dom";
 import clsx from "clsx";
 import { COMPANY_PROFILE } from "@/config/businessRules";
@@ -66,13 +66,16 @@ export function SiteHeader() {
 
   useEffect(() => {
     let mounted = true;
+
     void supabase.auth.getSession().then(({ data }) => {
       if (!mounted) return;
       setIsSignedIn(Boolean(data.session?.access_token));
     });
+
     const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => {
       setIsSignedIn(Boolean(session?.access_token));
     });
+
     return () => {
       mounted = false;
       sub.subscription.unsubscribe();
@@ -83,7 +86,7 @@ export function SiteHeader() {
     <header className="sticky top-0 z-40 nav-glass">
       <div className="header-frame flex items-center justify-between gap-3 py-3.5 xl:gap-4">
         <NavLink to="/" className="flex min-w-0 flex-1 items-center gap-3 xl:flex-none xl:min-w-[260px] 2xl:min-w-[300px]">
-          <div className="logo-glow hero-logo-pulse aspect-square h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-electric-300/25 bg-slate-950/65 p-0.5 md:h-[70px] md:w-[70px]">
+          <div className="logo-glow aspect-square h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-electric-300/25 bg-slate-950/65 p-0.5 md:h-[70px] md:w-[70px]">
             <img src="/kpt-logo.png" alt="KusiPrimeTec Logo" className="h-full w-full scale-[1.32] object-contain" loading="eager" />
           </div>
           <div className="min-w-0">
@@ -125,6 +128,7 @@ export function SiteHeader() {
           <button
             type="button"
             aria-label="Navigation öffnen"
+            aria-expanded={open}
             className="btn-secondary-premium inline-flex h-10 w-10 items-center justify-center rounded-xl xl:hidden"
             onClick={() => setOpen((value) => !value)}
           >

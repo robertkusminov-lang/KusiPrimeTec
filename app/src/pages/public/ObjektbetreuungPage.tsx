@@ -1,7 +1,6 @@
 import { NavLink } from "react-router-dom";
 import { Accordion } from "@/components/ui/Accordion";
 import { LazySection } from "@/components/ui/LazySection";
-import { LEISTUNGSUMFANG_HINWEIS } from "@/data/content";
 import {
   OBJECT_CARE_EXTRA_RULES,
   OBJECT_CARE_FAQS,
@@ -10,6 +9,7 @@ import {
   OBJECT_CARE_RULES,
   OBJECT_CARE_TARGET_GROUPS,
   PROBLEM_POINTS,
+  PUBLIC_OFFER_CONFIG,
 } from "@/data/publicWebsite";
 import { useSeo } from "@/hooks/useSeo";
 import { buildServiceSchema, ORGANIZATION_SCHEMA } from "@/lib/seoData";
@@ -42,27 +42,11 @@ export default function ObjektbetreuungPage() {
         description:
           "Planbare technische Entlastung mit festem Ansprechpartner, geplanten Sammelterminen, dokumentierten Abläufen und koordinierter Nachverfolgung offener Punkte.",
         urlPath: "/objektbetreuung",
-        offers: [
-          {
-            name: "ObjektBetreuung Start",
-            description: "8 Stunden Betreuungskontingent und 1 geplanter Sammeltermin pro Monat.",
-            price: 399,
-          },
-          {
-            name: "ObjektBetreuung Plus",
-            description: "12 Stunden Betreuungskontingent und bis zu 2 geplante Betreuungstermine pro Monat.",
-            price: 599,
-          },
-          {
-            name: "ObjektBetreuung Premium",
-            description: "16 Stunden Betreuungskontingent und bis zu 3 geplante Betreuungstermine pro Monat.",
-            price: 899,
-          },
-          {
-            name: "ObjektBetreuung Individuell",
-            description: "Individuell kalkuliertes Betreuungskonzept für mehrere Standorte oder besonderen Koordinationsbedarf.",
-          },
-        ],
+        offers: OBJECT_CARE_PACKAGES.map((pkg) => ({
+          name: pkg.name,
+          description: `${pkg.hoursLabel} und ${pkg.cadenceLabel}.`,
+          ...(pkg.priceEur ? { price: pkg.priceEur } : {}),
+        })),
       }),
     ],
   });
@@ -164,10 +148,10 @@ export default function ObjektbetreuungPage() {
         <div className="grid gap-4 md:grid-cols-2 2xl:grid-cols-4">
           {OBJECT_CARE_PACKAGES.map((pkg) => (
             <article
-              key={pkg.name}
-              className={`premium-card relative flex h-full flex-col p-5 ${"featured" in pkg && pkg.featured ? "border-electric-300/60 bg-electric-400/10" : "border-[var(--line)]"}`}
+              key={pkg.id}
+              className={`premium-card relative flex h-full flex-col p-5 ${pkg.featured ? "border-electric-300/60 bg-electric-400/10" : "border-[var(--line)]"}`}
             >
-              {"featured" in pkg && pkg.featured ? (
+              {pkg.featured ? (
                 <span className="absolute right-4 top-4 rounded-full border border-electric-200/45 bg-electric-400/15 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-electric-200">
                   Empfohlen
                 </span>
@@ -212,10 +196,10 @@ export default function ObjektbetreuungPage() {
         </article>
       </LazySection>
 
-      <LazySection className="premium-card page-card-lg" minHeight={220} delayMs={110}>
+      <LazySection className="premium-card page-card-lg" minHeight={240} delayMs={110}>
         <p className="text-xs uppercase tracking-[0.12em] text-electric-300">Leistungsabgrenzung und Fachfirmenkoordination</p>
         <h2 className="mt-2 text-2xl font-bold text-white">Klare Grenzen schützen die Zusammenarbeit.</h2>
-        <p className="mt-3 text-sm leading-relaxed text-[var(--text-soft)] md:text-base">{LEISTUNGSUMFANG_HINWEIS}</p>
+        <p className="mt-3 text-sm leading-relaxed text-[var(--text-soft)] md:text-base">{PUBLIC_OFFER_CONFIG.scope.summary}</p>
         <div className="mt-5 grid gap-3 md:grid-cols-2">
           {limits.map((item) => (
             <article key={item} className="rounded-2xl border border-[var(--line)] bg-slate-950/35 px-4 py-4 text-sm text-[var(--text-main)]">
@@ -223,6 +207,14 @@ export default function ObjektbetreuungPage() {
             </article>
           ))}
         </div>
+        <div className="mt-5 grid gap-3 md:grid-cols-2">
+          {PUBLIC_OFFER_CONFIG.projectCoordination.includes.slice(0, 6).map((item) => (
+            <article key={item} className="rounded-2xl border border-electric-300/20 bg-slate-950/40 px-4 py-4 text-sm text-[var(--text-main)]">
+              {item}
+            </article>
+          ))}
+        </div>
+        <p className="mt-4 text-sm leading-relaxed text-[var(--text-soft)]">{PUBLIC_OFFER_CONFIG.projectCoordination.note}</p>
       </LazySection>
 
       <LazySection className="premium-card page-card-lg" minHeight={240} delayMs={125}>
