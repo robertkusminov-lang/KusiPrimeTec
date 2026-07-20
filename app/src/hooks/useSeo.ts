@@ -1,18 +1,16 @@
 import React from "react";
+import { COMPANY_PROFILE } from "@/config/businessRules";
+
+export type JsonLdNode = Record<string, unknown>;
 
 interface SeoInput {
   title: string;
   description: string;
-}
-
-function ensureDescriptionTag(): HTMLMetaElement {
-  let el = document.querySelector('meta[name="description"]') as HTMLMetaElement | null;
-  if (!el) {
-    el = document.createElement("meta");
-    el.setAttribute("name", "description");
-    document.head.appendChild(el);
-  }
-  return el;
+  canonicalPath?: string;
+  image?: string;
+  robots?: string;
+  type?: string;
+  structuredData?: JsonLdNode | JsonLdNode[];
 }
 
 function ensureMeta(property: "name" | "property", key: string): HTMLMetaElement {
@@ -25,15 +23,90 @@ function ensureMeta(property: "name" | "property", key: string): HTMLMetaElement
   return el;
 }
 
-export function useSeo({ title, description }: SeoInput) {
-  React.useEffect(() => {
-    document.title = title;
-    const descriptionTag = ensureDescriptionTag();
-    descriptionTag.setAttribute("content", description);
+function ensureLink(rel: string): HTMLLinkElement {
+  let el = document.querySelector(`link[rel="${rel}"]`) as HTMLLinkElement | null;
+  if (!el) {
+    el = document.createElement("link");
+    el.setAttribute("rel", rel);
+    document.head.appendChild(el);
+  }
+  return el;
+}
 
+function ensureJsonLdScript(): HTMLScriptElement {
+  let el = document.querySelector('script[data-kpt-seo="jsonld"]') as HTMLScriptElement | null;
+  if (!el) {
+    el = document.createElement("script");
+    el.type = "application/ld+json";
+    el.setAttribute("data-kpt-seo", "jsonld");
+    document.head.appendChild(el);
+  }
+  return el;
+}
+
+export function normalizePath(path: string): string {
+  const raw = String(path || "").trim();
+  if (!raw) return "/";
+  return raw.startsWith("/") ? raw : `/${raw}`;
+}
+
+export function toAbsoluteUrl(pathOrUrl: string): string {
+  if (/^https?:\/\//i.test(pathOrUrl)) return pathOrUrl;
+  const normalized = normalizePath(pathOrUrl);
+  return `${COMPANY_PROFILE.websiteUrl}${normalized}`;
+}
+
+export function normalizeStructuredData(structuredData: JsonLdNode | JsonLdNode[]): JsonLdNode {
+  if (Array.isArray(structuredData)) {
+    return {
+      "@context": "https://schema.org",
+      "@graph": structuredData.map((entry) =>
+        entry["@context"] ? { ...entry, "@context": undefined } : entry,
+      ),
+    };
+  }
+
+  if (structuredData["@context"]) {
+    return structuredData;
+  }
+
+  return {
+    "@context": "https://schema.org",
+    ...structuredData,
+  };
+}
+
+export function useSeo({
+  title,
+  description,
+  canonicalPath,
+  image = "/kpt-logo.png",
+  robots = "index,follow,max-image-preview:large",
+  type = "website",
+  structuredData,
+}: SeoInput) {
+  React.useEffect(() => {
+    const currentPath = canonicalPath || window.location.pathname;
+    const canonicalUrl = toAbsoluteUrl(currentPath);
+    const imageUrl = toAbsoluteUrl(image);
+
+    document.title = title;
+
+    ensureMeta("name", "description").setAttribute("content", description);
+    ensureMeta("name", "robots").setAttribute("content", robots);
+    ensureMeta("property", "og:type").setAttribute("content", type);
     ensureMeta("property", "og:title").setAttribute("content", title);
     ensureMeta("property", "og:description").setAttribute("content", description);
+    ensureMeta("property", "og:url").setAttribute("content", canonicalUrl);
+    ensureMeta("property", "og:image").setAttribute("content", imageUrl);
+    ensureMeta("name", "twitter:card").setAttribute("content", "summary_large_image");
     ensureMeta("name", "twitter:title").setAttribute("content", title);
     ensureMeta("name", "twitter:description").setAttribute("content", description);
-  }, [title, description]);
+    ensureMeta("name", "twitter:image").setAttribute("content", imageUrl);
+
+    ensureLink("canonical").setAttribute("href", canonicalUrl);
+
+    const script = ensureJsonLdScript();
+    script.textContent = structuredData ? JSON.stringify(normalizeStructuredData(structuredData)) : "";
+  }, [canonicalPath, description, image, robots, structuredData, title, type]);
 }

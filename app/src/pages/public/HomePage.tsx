@@ -1,418 +1,381 @@
-﻿import { NavLink } from "react-router-dom";
+import { NavLink } from "react-router-dom";
 import { LazySection } from "@/components/ui/LazySection";
-import { BUSINESS_RULES } from "@/config/businessRules";
+import { ABLAUF } from "@/data/content";
+import { BUSINESS_RULES, COMPANY_PROFILE } from "@/config/businessRules";
 import {
-  KOORDINATION_RECHTSTEXT,
-  LEISTUNGEN,
-  LEISTUNGSUMFANG_ERLAUBT,
-  LEISTUNGSUMFANG_HINWEIS,
-  LEISTUNGSUMFANG_NICHT,
-  PUBLIC_PATHS,
-} from "@/data/content";
+  BUSINESS_MODEL_PROMISES,
+  DIGITAL_WORKFLOW_FEATURES,
+  OBJECT_CARE_INCLUDED,
+  OBJECT_CARE_PACKAGES,
+  OBJECT_CARE_TARGET_GROUPS,
+  OBJECT_CHECK_RESULTS,
+  PROBLEM_POINTS,
+  PUBLIC_OFFER_CONFIG,
+} from "@/data/publicWebsite";
 import { useSeo } from "@/hooks/useSeo";
+import { buildServiceSchema, ORGANIZATION_SCHEMA } from "@/lib/seoData";
 
-const trustBar = [
-  `Fokusregion ${BUSINESS_RULES.serviceArea.text}`,
-  "Technische Objektbetreuung für Gewerbe und Bestand",
-  "Dokumentierte Abläufe und klare Rückmeldungen",
-  "Koordination externer Fachfirmen bei Bedarf",
-];
+const trustSignals = [
+  "Persönlicher Ansprechpartner",
+  "Rückmeldung innerhalb von 24 Stunden",
+  "Dokumentierte Leistungen",
+  "30 km Einsatzradius",
+  "Klare Leistungsabgrenzung",
+] as const;
 
-const heroBadges = ["Schnelle Einsatzzeiten", "Klare Preise", "Direkter Ansprechpartner"];
-
-const serviceHighlights = [
-  "Störungen im Bestand aufnehmen und strukturiert lösen",
-  "Kleinreparaturen im zulässigen Rahmen",
-  "Wartung und Instandhaltung im laufenden Betrieb",
-  "Technische Objektbetreuung für Gewerbeobjekte",
-];
-
-const processSteps = [
-  { nr: "01", title: "Anfrage erfassen", text: "Objekt, Standort und Thema strukturiert aufnehmen." },
-  { nr: "02", title: "Einordnung", text: "Technische Sichtung, Priorisierung und Terminabstimmung." },
-  { nr: "03", title: "Umsetzung", text: "Arbeiten im zulässigen Rahmen oder koordinierte Fachfirmensteuerung." },
-  { nr: "04", title: "Nachweis", text: "Rapport, Fotodokumentation und klare Rückmeldung für die Objektakte." },
-];
-
-const whyKusiPoints = [
-  "Praxis im Gebäudebestand und strukturierte Vorgehensweise",
-  "Persönlicher Ansprechpartner statt wechselnder Hotline",
-  "Digitale Ticketführung mit nachvollziehbaren Nachweisen",
-  "Koordination qualifizierter Fachfirmen bei Bedarf",
-];
-
-const packageRules = [
-  "Nicht genutzte Stunden können bis zu 2 Monate übertragen werden.",
-  "Danach verfallen nicht genutzte Stunden.",
-  "Eine Auszahlung nicht genutzter Stunden ist ausgeschlossen.",
-  "Material, Ersatzteile und Fremdleistungen werden separat berechnet.",
-  "Zusatzarbeiten während aktiver Objektbetreuung werden vorab abgestimmt.",
-  "Kurzfristige Einsätze erfolgen nach Verfügbarkeit. Ein garantierter Notdienst ist nicht enthalten.",
-];
-
-const packages = [
+const digitalBoardCards = [
   {
-    name: "Objektbetreuung Start",
-    kicker: "ab 399 € / Monat",
-    price: "399 € / Monat",
-    hours: "inkl. 8 Stunden Betreuungskontingent",
-    text: "Für kleinere Gewerbeflächen, Praxen, Büros und Bestandsobjekte mit planbarem technischem Betreuungsbedarf.",
-    points: [
-      "8 Stunden pro Monat",
-      "Kleinreparaturen im zulässigen Rahmen",
-      "Mängelaufnahme und Fotodokumentation",
-      "Rundgänge und Sichtkontrollen nach Bedarf",
-      "Fester technischer Ansprechpartner",
-    ],
+    title: "Ticket erfasst",
+    meta: "Objekt · Ansprechpartner · Priorität",
+    lines: ["Ticketnummer eindeutig zugeordnet", "Klare Zuständigkeit", "Dokumentierter Eingang"],
   },
   {
-    name: "Objektbetreuung Plus",
-    kicker: "ab 599 € / Monat",
-    price: "599 € / Monat",
-    hours: "inkl. 12 Stunden Betreuungskontingent",
-    featured: true,
-    text: "Empfohlen für Märkte, Gewerbeobjekte und Standorte mit wiederkehrenden technischen Themen im laufenden Betrieb.",
-    points: [
-      "12 Stunden pro Monat",
-      "Störungsaufnahme und Priorisierung",
-      "Kleinreparaturen und Instandhaltung im Bestand",
-      "Koordination externer Fachfirmen nach Absprache",
-      "Bevorzugte Terminplanung gegenüber Einzelanfragen",
-    ],
+    title: "Bearbeitung nachvollziehbar",
+    meta: "Zeit · Material · Rückmeldung",
+    lines: ["Arbeitszeit dokumentiert", "Materialübersicht festgehalten", "Status sauber fortgeschrieben"],
   },
   {
-    name: "Objektbetreuung Premium",
-    kicker: "ab 899 € / Monat",
-    price: "899 € / Monat",
-    hours: "inkl. 16 Stunden Betreuungskontingent",
-    text: "Für größere Bestandsobjekte oder Kunden, die eine engere laufende technische Betreuung wünschen.",
-    points: [
-      "16 Stunden pro Monat",
-      "Regelmäßige Objektkontrollen",
-      "Laufende Mängel- und Maßnahmenliste",
-      "Monatliche Rückmeldung nach Bedarf",
-      "Direkter Ansprechpartner und koordinierte Folgeschritte",
-    ],
+    title: "Rapport digital verfügbar",
+    meta: "Foto · Ergebnis · Bestätigung",
+    lines: ["Fotodokumentation", "Ergebnisbericht", "Kundenbestätigung und Portalzugriff"],
   },
-  {
-    name: "Objektbetreuung Individuell",
-    kicker: "individuell abgestimmt",
-    price: "individuell kalkuliert",
-    hours: "Leistungsumfang nach Objekt, Intervall und Bedarf abgestimmt",
-    text: "Für Kunden mit mehreren Standorten, besonderen Abläufen oder erweitertem Koordinations- und Dokumentationsbedarf.",
-    points: [
-      "Individuelles Betreuungskonzept",
-      "Flexible Kontingente oder feste Betreuungstage",
-      "Mehrere Objekte oder Ansprechpartner möglich",
-      "Abgestimmte Dokumentation und Priorisierung",
-      "Eigenes Angebot nach Erstgespräch",
-    ],
-  },
-];
+] as const;
 
 export default function HomePage() {
   useSeo({
-    title: "Technischer Immobilienservice & Objektbetreuung | KusiPrimeTec Schorndorf",
+    title: "Technik im Bestand. Klar betreut. Sauber dokumentiert. | KusiPrimeTec",
     description:
-      "KusiPrimeTec bietet technische Objektbetreuung, Kleinreparaturen im zulässigen Rahmen, Instandhaltung, Störungsaufnahme und Projektkoordination für Bestandsimmobilien und Gewerbeobjekte im Raum Schorndorf.",
+      "KusiPrimeTec unterstützt Unternehmen, Verwaltungen und Eigentümer bei wiederkehrenden technischen Themen im Gebäudebestand mit persönlicher ObjektBetreuung, strukturierten Abläufen und digitaler Dokumentation.",
+    canonicalPath: "/",
+    structuredData: [
+      ORGANIZATION_SCHEMA,
+      buildServiceSchema({
+        name: "ObjektBetreuung und technischer Immobilienservice",
+        description:
+          "Planbare technische Entlastung für Gewerbeobjekte und Bestandsimmobilien mit persönlicher Betreuung, digitaler Dokumentation und koordinierter Nachverfolgung offener Punkte.",
+        urlPath: "/objektbetreuung",
+      }),
+      buildServiceSchema({
+        name: "ObjektCheck Gewerbe",
+        description:
+          "Strukturierte Aufnahme sichtbarer technischer Auffälligkeiten mit Fotodokumentation, Priorisierung und kompakter Maßnahmenübersicht.",
+        urlPath: "/objektcheck",
+        offers: [
+          {
+            name: "ObjektCheck Gewerbe",
+            description:
+              "Bis zu 90 Minuten Vor-Ort-Begehung mit strukturierter Bestandsaufnahme, Fotodokumentation und Handlungsempfehlung.",
+            price: PUBLIC_OFFER_CONFIG.objectCheck.priceEur,
+          },
+        ],
+      }),
+    ],
   });
 
   return (
     <div className="page-enter page-stack-large">
-      <div className="fixed bottom-5 right-5 z-50 hidden w-[280px] flex-col gap-2 2xl:flex">
-        <a
-          href="tel:+491776364393"
-          className="btn-primary-premium w-full rounded-full px-4 py-3 text-center text-sm font-semibold shadow-[0_16px_40px_rgba(3,14,32,0.5)]"
-        >
-          Direkt anrufen
-        </a>
-        <a
-          href="https://wa.me/491776364393?text=Hallo%20KusiPrimeTec%2C%20ich%20brauche%20Unterstützung."
-          target="_blank"
-          rel="noopener noreferrer"
-          className="btn-secondary-premium w-full rounded-full px-4 py-3 text-center text-sm font-semibold"
-        >
-          WhatsApp Kontakt
-        </a>
-      </div>
-
       <section className="hero-bg-shift premium-card premium-card-strong page-card-hero relative overflow-hidden">
         <div className="grid gap-8 xl:grid-cols-[1.2fr_0.8fr] xl:items-start">
-          <div className="min-w-0 space-y-5">
+          <div className="space-y-5">
             <p className="inline-flex rounded-full border border-electric-300/40 bg-slate-900/64 px-3 py-1 text-xs uppercase tracking-[0.14em] text-electric-300">
-              Technischer Immobilienservice für Bestandsobjekte
+              Technischer Immobilienservice · Schorndorf & 30 km Umgebung
             </p>
-            <h1 className="hero-display max-w-4xl text-white">
-              Technischer Immobilienservice für Bestandsobjekte
-            </h1>
+            <h1 className="hero-display max-w-4xl text-white">Technik im Bestand. Klar betreut. Sauber dokumentiert.</h1>
             <p className="hero-support text-electric-100">
-              Objektbetreuung, Kleinreparaturen, Instandhaltung und handwerklich-technischer Allround-Service im zulässigen Rahmen für Gewerbe, Eigentümer und Verwaltungen im Raum Schorndorf.
-            </p>
-            <p className="public-page-lead max-w-4xl">
-              KusiPrimeTec unterstützt Unternehmen, Märkte, Praxen, Büros, Eigentümer und Hausverwaltungen bei technischen und handwerklichen Themen im Gebäudebestand. Der Fokus liegt auf planbarer Objektbetreuung, Störungsaufnahme, Kleinreparaturen im zulässigen Rahmen, Mängeldokumentation und der Koordination externer Fachfirmen.
+              KusiPrimeTec unterstützt Unternehmen, Verwaltungen und Eigentümer bei wiederkehrenden technischen Themen im Gebäudebestand – mit persönlicher ObjektBetreuung, strukturierten Abläufen und digitaler Dokumentation.
             </p>
 
-            <div className="flex flex-wrap gap-2">
-              {heroBadges.map((badge) => (
-                <span key={badge} className="inline-flex items-center rounded-full border border-electric-300/35 bg-slate-900/55 px-3 py-1 text-xs text-electric-100">
-                  {badge}
-                </span>
-              ))}
-            </div>
-
-            <div className="space-y-1 text-xs text-[var(--text-soft)] md:text-sm">
-              <p>
-                {BUSINESS_RULES.pricing.hourlyRateEur} € / Stunde · {BUSINESS_RULES.pricing.serviceCallFlatEur} € Einsatzpauschale · Zuschläge klar geregelt
-              </p>
-              <p>{BUSINESS_RULES.response.text}</p>
-            </div>
-
-            <div className="flex flex-wrap gap-3">
-              <NavLink to="/objektbetreuung-anfrage" className="btn-primary-premium cta-pulse rounded-full px-6 py-3 text-sm font-semibold">
-                Objektbetreuung anfragen
+            <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
+              <NavLink
+                to="/objektbetreuung-anfrage?anliegen=objektbetreuung"
+                className="btn-primary-premium inline-flex min-h-[54px] items-center justify-center rounded-full px-6 py-3 text-sm font-semibold"
+              >
+                ObjektBetreuung anfragen
               </NavLink>
-              <NavLink to="/einzelauftrag" className="btn-secondary-premium rounded-full px-6 py-3 text-sm font-semibold">
+              <NavLink
+                to="/objektcheck"
+                className="btn-secondary-premium inline-flex min-h-[54px] items-center justify-center rounded-full px-6 py-3 text-sm font-semibold"
+              >
+                ObjektCheck kennenlernen
+              </NavLink>
+              <NavLink to="/einzelauftrag" className="inline-flex min-h-[54px] items-center text-sm font-semibold text-electric-200 underline-offset-4 hover:text-white hover:underline">
                 Einzelauftrag anfragen
               </NavLink>
-              <a
-                href="https://wa.me/491776364393?text=Hallo%20KusiPrimeTec%2C%20ich%20habe%20eine%20Frage."
-                target="_blank"
-                rel="noopener noreferrer"
-                className="btn-secondary-premium rounded-full px-6 py-3 text-sm font-semibold"
-              >
-                WhatsApp-Kontakt
-              </a>
             </div>
 
-            <div className="grid gap-2 sm:max-w-2xl sm:grid-cols-2">
-              <a
-                href="mailto:info@kusiprimetec.de?subject=Anfrage%20KusiPrimeTec"
-                className="inline-flex items-center justify-center rounded-full border border-electric-300/35 bg-slate-900/45 px-4 py-2 text-sm text-electric-200 transition hover:border-electric-200/60 hover:text-white"
-              >
-                E-Mail: info@kusiprimetec.de
-              </a>
-              <a
-                href="tel:+491776364393"
-                className="inline-flex items-center justify-center rounded-full border border-electric-300/35 bg-slate-900/45 px-4 py-2 text-sm text-electric-200 transition hover:border-electric-200/60 hover:text-white"
-              >
-                Telefon: 0177 6364393
-              </a>
+            <div className="grid gap-2 sm:grid-cols-2 xl:max-w-4xl xl:grid-cols-3">
+              {trustSignals.map((signal) => (
+                <div key={signal} className="rounded-2xl border border-electric-300/20 bg-slate-950/40 px-4 py-3 text-sm text-[var(--text-main)]">
+                  {signal}
+                </div>
+              ))}
             </div>
           </div>
 
-          <div className="min-w-0 space-y-4">
+          <div className="space-y-4">
             <article className="premium-card border border-electric-300/25 p-5">
-              <p className="text-xs uppercase tracking-[0.12em] text-electric-300">Leistungsfokus</p>
-              <h2 className="mt-2 text-2xl font-bold text-white">Gebäudetechnik im Fokus. Bestandsservice als Kern. Lösungen, die funktionieren.</h2>
-              <p className="mt-3 text-sm leading-relaxed text-[var(--text-soft)]">
-                Technische Probleme im Gebäude werden analysiert, behoben und strukturiert umgesetzt - mit Blick auf das gesamte Objekt und eine dauerhaft saubere Betreuung.
-              </p>
+              <p className="text-xs uppercase tracking-[0.12em] text-electric-300">Wofür KusiPrimeTec steht</p>
+              <h2 className="mt-2 text-2xl font-bold text-white">Planbare technische Entlastung statt lose Einzelthemen.</h2>
+              <ul className="mt-4 grid gap-2 text-sm text-[var(--text-main)]">
+                {BUSINESS_MODEL_PROMISES.slice(0, 5).map((point) => (
+                  <li key={point} className="flex gap-2">
+                    <span className="text-electric-300">✓</span>
+                    <span>{point}</span>
+                  </li>
+                ))}
+              </ul>
             </article>
 
             <article className="premium-card border border-electric-300/20 p-5">
-              <p className="text-xs uppercase tracking-[0.12em] text-electric-300">Leistungsabgrenzung</p>
-              <p className="mt-3 text-sm leading-relaxed text-[var(--text-soft)]">
-                Keine Neuinstallationen, keine Zähleranlagen, keine Abnahmen, keine eigenverantwortliche Errichtung elektrotechnischer Anlagen und keine meisterpflichtigen Arbeiten in eigener Verantwortung.
-              </p>
+              <p className="text-xs uppercase tracking-[0.12em] text-electric-300">Geeignet für</p>
+              <div className="mt-3 flex flex-wrap gap-2">
+                {OBJECT_CARE_TARGET_GROUPS.slice(0, 6).map((group) => (
+                  <span key={group} className="rounded-full border border-[var(--line)] bg-slate-950/45 px-3 py-1 text-xs text-[var(--text-main)]">
+                    {group}
+                  </span>
+                ))}
+              </div>
             </article>
 
-            <article className="premium-card border border-electric-300/20 p-4">
-              <div className="grid gap-3 sm:grid-cols-[220px_1fr] sm:items-center">
-                <div className="aspect-video w-full overflow-hidden rounded-2xl border border-[var(--line)] bg-slate-900/55">
-                  <img src="/Pb.png" alt="Robert Kusminov - KusiPrimeTec" className="h-full w-full object-cover" loading="lazy" />
-                </div>
-                <div className="space-y-1">
-                  <p className="text-xs uppercase tracking-[0.12em] text-electric-300">Ihr Ansprechpartner</p>
-                  <p className="text-lg font-semibold text-white">Robert Kusminov</p>
-                  <p className="text-sm text-[var(--text-soft)]">Persönliche Betreuung, klare Kommunikation und verbindliche Rückmeldungen vor Ort.</p>
-                </div>
-              </div>
+            <article className="premium-card border border-electric-300/20 p-5">
+              <p className="text-xs uppercase tracking-[0.12em] text-electric-300">Kundenlogin</p>
+              <p className="mt-2 text-sm leading-relaxed text-[var(--text-soft)]">
+                Bestehende Kunden nutzen den Kundenlogin für zugewiesene Objekte, Tickets, Rapporte und die laufende Dokumentation.
+              </p>
+              <NavLink
+                to="/konto/anmelden"
+                className="btn-secondary-premium mt-4 inline-flex min-h-[50px] items-center justify-center rounded-full px-5 py-3 text-sm font-semibold"
+              >
+                Kundenlogin öffnen
+              </NavLink>
             </article>
           </div>
         </div>
       </section>
 
-      <LazySection className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4" minHeight={150} delayMs={30}>
-        {trustBar.map((item, idx) => (
-          <article key={item} className="premium-card flex items-center gap-3 p-4">
-            <span className="inline-flex h-7 w-7 items-center justify-center rounded-full border border-electric-300/45 bg-electric-400/10 text-[10px] font-semibold text-electric-300">{idx + 1}</span>
-            <p className="text-xs leading-relaxed text-[var(--text-main)]">{item}</p>
+      <LazySection className="premium-card page-card-lg" minHeight={260} delayMs={40}>
+        <div className="grid gap-6 lg:grid-cols-[0.95fr_1.05fr] lg:items-start">
+          <div className="space-y-3">
+            <p className="text-xs uppercase tracking-[0.12em] text-electric-300">Problemverständnis</p>
+            <h2 className="text-2xl font-bold text-white md:text-3xl">Kleine technische Themen werden schnell zu großen organisatorischen Aufgaben.</h2>
+            <p className="text-sm leading-relaxed text-[var(--text-soft)] md:text-base">
+              KusiPrimeTec bündelt technische Kleinthemen, priorisiert offene Punkte und schafft einen nachvollziehbaren Ablauf von der Meldung bis zum Rapport.
+            </p>
+          </div>
+          <div className="grid gap-3">
+            {PROBLEM_POINTS.map((point) => (
+              <article key={point} className="rounded-2xl border border-[var(--line)] bg-slate-950/35 px-4 py-4">
+                <p className="text-sm leading-relaxed text-[var(--text-main)]">{point}</p>
+              </article>
+            ))}
+          </div>
+        </div>
+      </LazySection>
+
+      <LazySection className="premium-card premium-card-strong page-card-lg" minHeight={360} delayMs={55}>
+        <div className="grid gap-6 xl:grid-cols-[1.05fr_0.95fr] xl:items-start">
+          <div className="space-y-4">
+            <p className="text-xs uppercase tracking-[0.12em] text-electric-300">Hauptangebot</p>
+            <h2 className="text-2xl font-bold text-white md:text-3xl">ObjektBetreuung als zentrales Angebot für laufende technische Entlastung.</h2>
+            <p className="text-sm leading-relaxed text-[var(--text-soft)] md:text-base">
+              Im Mittelpunkt steht nicht die einzelne Reparatur, sondern ein sauberer Ablauf mit fester Betreuung, dokumentierten Rückmeldungen und klaren nächsten Schritten.
+            </p>
+            <div className="grid gap-3 md:grid-cols-2">
+              {OBJECT_CARE_INCLUDED.map((item) => (
+                <div key={item} className="rounded-2xl border border-electric-300/20 bg-slate-950/40 px-4 py-4 text-sm text-[var(--text-main)]">
+                  {item}
+                </div>
+              ))}
+            </div>
+            <NavLink
+              to="/objektbetreuung"
+              className="btn-primary-premium inline-flex min-h-[54px] items-center justify-center rounded-full px-6 py-3 text-sm font-semibold"
+            >
+              ObjektBetreuung ansehen
+            </NavLink>
+          </div>
+
+          <article className="premium-card border border-electric-300/25 p-5">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <p className="text-xs uppercase tracking-[0.12em] text-electric-300">Betreuungsstufen im Überblick</p>
+                <h3 className="mt-2 text-xl font-semibold text-white">Kompakter Einstieg statt vier voller Preiskarten.</h3>
+              </div>
+              <span className="rounded-full border border-electric-200/45 bg-electric-400/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-electric-200">
+                Plus empfohlen
+              </span>
+            </div>
+            <div className="mt-5 grid gap-3">
+              {OBJECT_CARE_PACKAGES.map((pkg) => (
+                <div
+                  key={pkg.id}
+                  className={`rounded-2xl border px-4 py-4 ${pkg.featured ? "border-electric-300/45 bg-electric-400/10" : "border-[var(--line)] bg-slate-950/35"}`}
+                >
+                  <div className="flex flex-wrap items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="text-sm font-semibold text-white">{pkg.name}</p>
+                      <p className="mt-1 text-sm text-electric-100">{pkg.hoursLabel}</p>
+                      <p className="mt-1 text-xs text-[var(--text-soft)]">{pkg.cadenceLabel}</p>
+                    </div>
+                    <p className="text-sm font-semibold text-white">{pkg.priceLabel}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <p className="mt-4 text-sm text-[var(--text-soft)]">
+              Start ab 399 € pro Monat, Plus als empfohlene Hauptvariante und individuelle Modelle für mehrere Standorte oder besondere Betriebszeiten.
+            </p>
           </article>
-        ))}
-      </LazySection>
-
-      <LazySection className="premium-card page-card-lg" minHeight={240} delayMs={35}>
-        <header className="space-y-2">
-          <p className="text-xs uppercase tracking-[0.12em] text-electric-300">Drei Wege</p>
-          <h2 className="text-2xl font-bold text-white md:text-3xl">Einzelauftrag, ObjektBetreuung und Kundenlogin klar getrennt</h2>
-        </header>
-        <div className="mt-5 grid gap-4 lg:grid-cols-3">
-          {PUBLIC_PATHS.map((entry) => (
-            <article key={entry.href} className="premium-card flex h-full flex-col p-4">
-              <h3 className="text-lg font-semibold text-white">{entry.title}</h3>
-              <p className="mt-2 flex-1 text-sm text-[var(--text-soft)]">{entry.text}</p>
-              <NavLink to={entry.href} className="btn-secondary-premium mt-4 inline-flex w-fit rounded-full px-4 py-2 text-sm font-semibold">
-                Öffnen
-              </NavLink>
-            </article>
-          ))}
         </div>
       </LazySection>
 
-      <LazySection className="premium-card page-card" minHeight={220} delayMs={45}>
-        <header className="mb-4 space-y-1">
-          <h2 className="text-xl font-semibold text-white md:text-2xl">Unsere Leistungen</h2>
-          <p className="text-sm text-[var(--text-soft)]">Direkte Unterstützung im Bestand mit klar abgegrenztem Leistungsrahmen.</p>
-        </header>
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-          {serviceHighlights.map((item) => (
-            <article key={item} className="premium-card border border-electric-300/25 p-4 text-sm text-[var(--text-main)]">
-              {item}
-            </article>
-          ))}
-        </div>
-      </LazySection>
-
-      <LazySection className="premium-card page-card-lg" minHeight={260} delayMs={60}>
-        <header className="mb-4 space-y-1">
-          <p className="text-xs uppercase tracking-[0.12em] text-electric-300">Leistungsspektrum</p>
-          <h2 className="text-2xl font-bold text-white md:text-3xl">Was KusiPrimeTec im Bestand übernimmt</h2>
-        </header>
-        <div className="grid gap-4 md:grid-cols-2">
-          {LEISTUNGEN.map((item) => (
-            <article key={item.titel} className="premium-card p-5">
-              <h3 className="text-lg font-semibold text-white">{item.titel}</h3>
-              <p className="mt-2 text-sm leading-relaxed text-[var(--text-soft)]">{item.text}</p>
-            </article>
-          ))}
-        </div>
-      </LazySection>
-
-      <LazySection className="premium-card page-card" minHeight={220} delayMs={75}>
-        <h2 className="text-xl font-semibold text-white">Hinweis zur Leistungsabgrenzung</h2>
-        <p className="mt-3 text-sm leading-relaxed text-[var(--text-soft)]">{LEISTUNGSUMFANG_HINWEIS}</p>
-        <div className="mt-4 grid gap-3 md:grid-cols-2">
-          <article className="rounded-xl border border-emerald-300/30 bg-emerald-400/8 p-3">
-            <p className="text-xs font-semibold uppercase tracking-[0.12em] text-emerald-300">Was wir anbieten</p>
-            <ul className="mt-2 grid gap-1 text-sm text-[var(--text-main)]">
-              {LEISTUNGSUMFANG_ERLAUBT.map((item) => (
-                <li key={item}>✓ {item}</li>
+      <LazySection className="premium-card page-card-lg" minHeight={240} delayMs={70}>
+        <div className="grid gap-6 lg:grid-cols-[0.95fr_1.05fr] lg:items-start">
+          <div className="space-y-3">
+            <p className="text-xs uppercase tracking-[0.12em] text-electric-300">ObjektCheck</p>
+            <h2 className="text-2xl font-bold text-white md:text-3xl">ObjektCheck als strukturierter Einstieg.</h2>
+            <p className="text-sm leading-relaxed text-[var(--text-soft)] md:text-base">
+              {PUBLIC_OFFER_CONFIG.objectCheck.priceLabel} – strukturierte Aufnahme sichtbarer technischer Auffälligkeiten mit Fotodokumentation, Priorisierung und kompakter Maßnahmenübersicht.
+            </p>
+            <p className="text-sm leading-relaxed text-[var(--text-soft)]">{PUBLIC_OFFER_CONFIG.objectCheck.largerObjectNote}</p>
+          </div>
+          <div className="premium-card border border-electric-300/25 p-5">
+            <p className="text-xs uppercase tracking-[0.12em] text-electric-300">Was Sie erhalten</p>
+            <ul className="mt-4 grid gap-2 text-sm text-[var(--text-main)]">
+              {OBJECT_CHECK_RESULTS.slice(0, 4).map((item) => (
+                <li key={item} className="flex gap-2">
+                  <span className="text-electric-300">✓</span>
+                  <span>{item}</span>
+                </li>
               ))}
             </ul>
-          </article>
-          <article className="rounded-xl border border-rose-300/30 bg-rose-400/8 p-3">
-            <p className="text-xs font-semibold uppercase tracking-[0.12em] text-rose-300">Nicht direkt durch uns</p>
-            <ul className="mt-2 grid gap-1 text-sm text-[var(--text-main)]">
-              {LEISTUNGSUMFANG_NICHT.map((item) => (
-                <li key={item}>✗ {item}</li>
-              ))}
-            </ul>
-          </article>
+            <NavLink
+              to="/objektbetreuung-anfrage?anliegen=objektcheck"
+              className="btn-secondary-premium mt-5 inline-flex min-h-[52px] items-center justify-center rounded-full px-5 py-3 text-sm font-semibold"
+            >
+              ObjektCheck anfragen
+            </NavLink>
+          </div>
         </div>
       </LazySection>
 
-      <LazySection className="premium-card premium-card-strong page-card-lg" minHeight={620} delayMs={95}>
-        <header className="max-w-4xl space-y-3">
-          <p className="text-xs uppercase tracking-[0.12em] text-electric-300">Objektbetreuung als Hauptangebot</p>
-          <h2 className="text-2xl font-bold text-white md:text-4xl">Planbare Objektbetreuung statt unstrukturierter Einzelanfragen</h2>
-          <p className="text-sm leading-relaxed text-[var(--text-soft)] md:text-base">
-            Die KusiPrimeTec Objektbetreuung richtet sich an Unternehmen, Märkte, Praxen, Büros, Eigentümer und Verwaltungen, die wiederkehrende technische Themen im Bestand strukturiert lösen wollen. Neben den festen Paketen ist auch ein individuell kalkuliertes Betreuungskonzept möglich.
-          </p>
-        </header>
-
-        <section className="mt-6 grid gap-4 md:grid-cols-2 2xl:grid-cols-4">
-          {packages.map((pkg) => (
-            <article key={pkg.name} className={`premium-card flex h-full flex-col p-5 ${pkg.featured ? "border-electric-300/60 bg-electric-400/10 shadow-[0_20px_60px_rgba(56,189,248,0.12)]" : "border-[var(--line)]"}`}>
-              <p className="text-xs uppercase tracking-[0.12em] text-electric-300">{pkg.kicker}</p>
-              <h3 className="mt-2 text-xl font-bold text-white">{pkg.name}</h3>
-              {pkg.featured ? <p className="mt-2 inline-flex w-fit rounded-full border border-electric-200/45 bg-electric-400/15 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-electric-200">Empfohlen</p> : null}
-              <p className="mt-3 text-3xl font-extrabold text-white">{pkg.price}</p>
-              <p className="mt-1 text-sm font-semibold text-electric-100">{pkg.hours}</p>
-              <p className="mt-4 text-sm leading-relaxed text-[var(--text-soft)]">{pkg.text}</p>
-              <ul className="mt-4 grid gap-2 text-sm text-[var(--text-main)]">
-                {pkg.points.map((point) => (
-                  <li key={point} className="flex gap-2"><span className="text-electric-300">✓</span><span>{point}</span></li>
-                ))}
-              </ul>
+      <LazySection className="premium-card page-card-lg" minHeight={260} delayMs={85}>
+        <p className="text-xs uppercase tracking-[0.12em] text-electric-300">Ablauf</p>
+        <h2 className="mt-2 text-2xl font-bold text-white md:text-3xl">Von der Meldung bis zum dokumentierten Ergebnis.</h2>
+        <div className="mt-5 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+          {ABLAUF.map((step, index) => (
+            <article key={step} className="premium-card p-4">
+              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-electric-300">{String(index + 1).padStart(2, "0")}</p>
+              <h3 className="mt-2 text-lg font-semibold text-white">{step}</h3>
             </article>
           ))}
-        </section>
-
-        <div className="mt-6 grid gap-4 lg:grid-cols-2">
-          <article className="premium-card p-5">
-            <h3 className="text-lg font-semibold text-white">Wichtige Regeln</h3>
-            <ul className="mt-3 grid gap-2 text-sm text-[var(--text-main)]">
-              {packageRules.map((rule) => (
-                <li key={rule}>• {rule}</li>
-              ))}
-            </ul>
-          </article>
-          <article className="premium-card p-5">
-            <h3 className="text-lg font-semibold text-white">Ihre Vorteile</h3>
-            <ul className="mt-3 grid gap-2 text-sm text-[var(--text-main)]">
-              <li>• Fester technischer Ansprechpartner</li>
-              <li>• Planbare monatliche Kosten</li>
-              <li>• Kleinreparaturen im zulässigen Rahmen</li>
-              <li>• Rundgänge und Sichtkontrollen nach Bedarf</li>
-              <li>• Koordination externer Fachfirmen bei Bedarf</li>
-            </ul>
-          </article>
         </div>
+      </LazySection>
 
-        <div className="mt-6 flex flex-wrap gap-3">
-          <NavLink to="/objektbetreuung-anfrage" className="btn-primary-premium rounded-full px-5 py-3 text-sm font-semibold">Objektbetreuung anfragen</NavLink>
-          <NavLink to="/preise" className="btn-secondary-premium rounded-full px-5 py-3 text-sm font-semibold">Preise ansehen</NavLink>
-          <a href="https://wa.me/491776364393?text=Hallo%20KusiPrimeTec%2C%20ich%20interessiere%20mich%20für%20die%20Objektbetreuung." target="_blank" rel="noopener noreferrer" className="btn-secondary-premium rounded-full px-5 py-3 text-sm font-semibold">WhatsApp-Kontakt</a>
+      <LazySection className="premium-card premium-card-strong page-card-lg" minHeight={320} delayMs={100}>
+        <div className="grid gap-6 xl:grid-cols-[0.95fr_1.05fr] xl:items-start">
+          <div className="space-y-3">
+            <p className="text-xs uppercase tracking-[0.12em] text-electric-300">Digitale Arbeitsweise</p>
+            <h2 className="text-2xl font-bold text-white md:text-3xl">Digital organisiert statt lose dokumentiert.</h2>
+            <p className="text-sm leading-relaxed text-[var(--text-soft)] md:text-base">
+              Digitale Tickets, eindeutige Zuordnungen und saubere Rapporte schaffen Transparenz für Unternehmen, Verwaltungen und Eigentümer.
+            </p>
+            <div className="grid gap-2 md:grid-cols-2">
+              {DIGITAL_WORKFLOW_FEATURES.map((item) => (
+                <div key={item} className="rounded-2xl border border-[var(--line)] bg-slate-950/35 px-4 py-3 text-sm text-[var(--text-main)]">
+                  {item}
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="grid gap-3">
+            {digitalBoardCards.map((card) => (
+              <article key={card.title} className="premium-card border border-electric-300/20 p-5">
+                <div className="flex items-center justify-between gap-3">
+                  <div>
+                    <p className="text-sm font-semibold text-white">{card.title}</p>
+                    <p className="mt-1 text-xs uppercase tracking-[0.12em] text-electric-300">{card.meta}</p>
+                  </div>
+                  <span className="rounded-full border border-electric-300/25 bg-electric-400/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-electric-200">
+                    Nachweis
+                  </span>
+                </div>
+                <div className="mt-4 grid gap-2">
+                  {card.lines.map((line) => (
+                    <div key={line} className="rounded-xl border border-[var(--line)] bg-slate-950/45 px-3 py-2 text-sm text-[var(--text-main)]">
+                      {line}
+                    </div>
+                  ))}
+                </div>
+              </article>
+            ))}
+          </div>
         </div>
       </LazySection>
 
       <LazySection className="premium-card page-card-lg" minHeight={260} delayMs={115}>
-        <header className="mb-5 space-y-1">
-          <h2 className="text-2xl font-bold text-white md:text-3xl">So arbeiten wir</h2>
-          <p className="text-sm text-[var(--text-soft)]">Klare Abläufe schaffen Transparenz und Planungssicherheit.</p>
-        </header>
-        <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-4">
-          {processSteps.map((step) => (
-            <article key={step.nr} className="premium-card group p-4">
-              <p className="text-xs font-semibold tracking-[0.14em] text-electric-300">{step.nr}</p>
-              <h3 className="mt-1 text-base font-semibold text-white">{step.title}</h3>
-              <p className="mt-2 text-sm text-[var(--text-soft)]">{step.text}</p>
-            </article>
-          ))}
-        </div>
-      </LazySection>
-
-      <LazySection className="premium-card premium-card-strong page-card-lg" minHeight={240} delayMs={130}>
-        <div className="grid gap-6 lg:grid-cols-[1fr_1fr] lg:items-center">
-          <div className="space-y-4">
-            <p className="text-xs uppercase tracking-[0.12em] text-electric-300">Warum KusiPrimeTec</p>
-            <h2 className="text-2xl font-bold text-white md:text-3xl">Vertrauen entsteht durch Klarheit, Dokumentation und persönliche Betreuung.</h2>
-            <ul className="grid gap-3">
-              {whyKusiPoints.map((point) => (
-                <li key={point} className="premium-card p-4 text-sm text-[var(--text-main)]">✓ {point}</li>
-              ))}
-            </ul>
-          </div>
-          <div className="premium-card p-5 md:p-6">
-            <p className="text-xs uppercase tracking-[0.12em] text-electric-300">Projektkoordination</p>
-            <h3 className="mt-2 text-xl font-semibold text-white">Wenn Facharbeiten erforderlich sind, bleibt die Steuerung trotzdem klar.</h3>
-            <p className="mt-3 text-sm leading-relaxed text-[var(--text-soft)]">{KOORDINATION_RECHTSTEXT}</p>
-          </div>
-        </div>
-      </LazySection>
-
-      <LazySection className="premium-card premium-card-strong relative overflow-hidden p-6 text-center md:p-8" minHeight={190} delayMs={145}>
-        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(60%_80%_at_50%_0%,rgba(56,189,248,.16),transparent_72%)]" />
-        <div className="relative space-y-3">
-          <h2 className="text-2xl font-bold text-white md:text-3xl">Struktur beginnt mit einer klaren Anfrage.</h2>
-          <p className="text-sm text-[var(--text-soft)]">Beschreiben Sie Ihr Objekt oder Ihr technisches Thema. Wir melden uns mit einer sauberen Ersteinschätzung.</p>
-          <div className="pt-1">
-            <NavLink to="/buchen" className="btn-primary-premium cta-pulse rounded-full px-6 py-3 text-sm font-semibold">
-              Jetzt Anfrage starten
+        <div className="grid gap-6 lg:grid-cols-[0.95fr_1.05fr] lg:items-center">
+          <div className="space-y-3">
+            <p className="text-xs uppercase tracking-[0.12em] text-electric-300">Über KusiPrimeTec</p>
+            <h2 className="text-2xl font-bold text-white md:text-3xl">Persönliche Betreuung mit technischem und organisatorischem Blick.</h2>
+            <p className="text-sm leading-relaxed text-[var(--text-soft)] md:text-base">
+              Robert Kusminov ist ausgebildeter Elektroniker für Energie- und Gebäudetechnik und verfügt über mehrjährige Berufserfahrung im technischen Facility Management. Heute verbindet er diese Erfahrung bei KusiPrimeTec mit persönlicher ObjektBetreuung, klaren Prozessen und digitaler Dokumentation.
+            </p>
+            <NavLink
+              to="/ueber-kusiprimetec"
+              className="btn-secondary-premium inline-flex min-h-[52px] items-center justify-center rounded-full px-5 py-3 text-sm font-semibold"
+            >
+              Mehr über KusiPrimeTec
             </NavLink>
           </div>
-          <p className="text-xs text-[var(--text-soft)]">Dauer: ca. 60 Sekunden</p>
+
+          <article className="premium-card border border-electric-300/20 p-4">
+            <div className="grid gap-4 sm:grid-cols-[180px_1fr] sm:items-center">
+              <div className="overflow-hidden rounded-2xl border border-[var(--line)] bg-slate-950/55">
+                <img src="/Pb.png" alt="Robert Kusminov, Inhaber von KusiPrimeTec" className="h-full w-full object-cover" loading="lazy" />
+              </div>
+              <div className="space-y-2">
+                <p className="text-xs uppercase tracking-[0.12em] text-electric-300">Ihr Ansprechpartner</p>
+                <p className="text-xl font-semibold text-white">{COMPANY_PROFILE.ownerName}</p>
+                <p className="text-sm leading-relaxed text-[var(--text-soft)]">
+                  Mehrjährige Praxis in Verkaufs-, Büro- und Bestandsobjekten sowie Erfahrung in Störungsbearbeitung, Dokumentation und technischen Abstimmungen.
+                </p>
+              </div>
+            </div>
+          </article>
         </div>
+      </LazySection>
+
+      <LazySection className="premium-card premium-card-strong page-card-lg text-center" minHeight={220} delayMs={130}>
+        <p className="text-xs uppercase tracking-[0.12em] text-electric-300">Nächster Schritt</p>
+        <h2 className="mt-2 text-2xl font-bold text-white md:text-3xl">Sie suchen einen festen Ansprechpartner für technische Themen im Bestand?</h2>
+        <p className="mx-auto mt-3 max-w-3xl text-sm leading-relaxed text-[var(--text-soft)] md:text-base">
+          Starten Sie mit einer ObjektBetreuungs-Anfrage, lernen Sie den ObjektCheck kennen oder melden Sie ein einzelnes Thema über den bestehenden Ticket-Flow.
+        </p>
+        <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:justify-center">
+          <NavLink
+            to="/objektbetreuung-anfrage?anliegen=objektbetreuung"
+            className="btn-primary-premium inline-flex min-h-[54px] items-center justify-center rounded-full px-6 py-3 text-sm font-semibold"
+          >
+            ObjektBetreuung anfragen
+          </NavLink>
+          <NavLink
+            to="/objektbetreuung-anfrage?anliegen=objektcheck"
+            className="btn-secondary-premium inline-flex min-h-[54px] items-center justify-center rounded-full px-6 py-3 text-sm font-semibold"
+          >
+            ObjektCheck anfragen
+          </NavLink>
+          <NavLink
+            to="/einzelauftrag"
+            className="btn-secondary-premium inline-flex min-h-[54px] items-center justify-center rounded-full px-6 py-3 text-sm font-semibold"
+          >
+            Einzelauftrag melden
+          </NavLink>
+        </div>
+        <p className="mt-4 text-xs text-[var(--text-soft)]">
+          Einsatzradius: {BUSINESS_RULES.serviceArea.radiusKm} km ab {BUSINESS_RULES.serviceArea.centerCity}
+        </p>
       </LazySection>
     </div>
   );

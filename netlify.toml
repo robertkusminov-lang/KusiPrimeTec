@@ -1,10 +1,18 @@
 [build]
 base = "."
 publish = "app/dist"
-command = "npm --workspace @kpt/app run build"
+command = "npm run build"
+
+[build.environment]
+NODE_VERSION = "20"
 
 [[redirects]]
 from = "/api/*"
 to = "https://pbcqceddxjmhiwzfydvl.supabase.co/functions/v1/:splat"
 status = 200
 force = true
+
+[[redirects]]
+from = "/*"
+to = "/index.html"
+status = 200

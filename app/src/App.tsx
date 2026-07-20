@@ -20,12 +20,15 @@ import { initGoogleTag, trackGooglePageView } from "@/lib/googleTag";
 import { getAnalyticsConsent, subscribeAnalyticsConsent } from "@/lib/consent";
 
 const LeistungenPage = lazy(loadPublicRoute("/leistungen"));
+const ObjektcheckPage = lazy(loadPublicRoute("/objektcheck"));
 const PreisePage = lazy(loadPublicRoute("/preise"));
 const AblaufPage = lazy(loadPublicRoute("/ablauf"));
 const ObjektbetreuungPage = lazy(loadPublicRoute("/objektbetreuung"));
 const BuchenPage = lazy(loadPublicRoute("/buchen"));
 const EinzelauftragPage = lazy(loadPublicRoute("/einzelauftrag"));
 const ObjektbetreuungAnfragePage = lazy(loadPublicRoute("/objektbetreuung-anfrage"));
+const ReferenzenPage = lazy(loadPublicRoute("/referenzen"));
+const UeberKusiPrimeTecPage = lazy(loadPublicRoute("/ueber-kusiprimetec"));
 const CustomerAuthPage = lazy(loadPublicRoute("/konto/anmelden"));
 const CustomerPortalPage = lazy(loadPublicRoute("/konto"));
 const CustomerReportPage = lazy(loadCustomerReportRoute);
@@ -273,6 +276,9 @@ export default function App() {
         <Route path="/" element={<HomePage />} />
         <Route path="/leistungen" element={<LazyRoute><LeistungenPage /></LazyRoute>} />
         <Route path="/objektbetreuung" element={<LazyRoute><ObjektbetreuungPage /></LazyRoute>} />
+        <Route path="/objektcheck" element={<LazyRoute><ObjektcheckPage /></LazyRoute>} />
+        <Route path="/referenzen" element={<LazyRoute><ReferenzenPage /></LazyRoute>} />
+        <Route path="/ueber-kusiprimetec" element={<LazyRoute><UeberKusiPrimeTecPage /></LazyRoute>} />
         <Route path="/preise" element={<LazyRoute><PreisePage /></LazyRoute>} />
         <Route path="/ablauf" element={<LazyRoute><AblaufPage /></LazyRoute>} />
         <Route path="/buchen" element={<LazyRoute><BuchenPage /></LazyRoute>} />

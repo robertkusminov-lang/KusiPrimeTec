@@ -1,4 +1,4 @@
-﻿import { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { NavLink, useLocation } from "react-router-dom";
 import clsx from "clsx";
 import { COMPANY_PROFILE } from "@/config/businessRules";
@@ -56,7 +56,7 @@ export function SiteHeader() {
   const [isSignedIn, setIsSignedIn] = useState(false);
   const location = useLocation();
 
-  const mainNavItems = NAV_PUBLIC.filter((item) => item.href !== "/konto");
+  const mainNavItems = NAV_PUBLIC.filter((item) => item.href !== "/konto" && item.href !== "/konto/anmelden");
   const accountHref = isSignedIn ? "/konto" : "/konto/anmelden";
   const accountLabel = isSignedIn ? "Kundenportal" : "Kundenlogin";
 
@@ -66,13 +66,16 @@ export function SiteHeader() {
 
   useEffect(() => {
     let mounted = true;
+
     void supabase.auth.getSession().then(({ data }) => {
       if (!mounted) return;
       setIsSignedIn(Boolean(data.session?.access_token));
     });
+
     const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => {
       setIsSignedIn(Boolean(session?.access_token));
     });
+
     return () => {
       mounted = false;
       sub.subscription.unsubscribe();
@@ -83,7 +86,7 @@ export function SiteHeader() {
     <header className="sticky top-0 z-40 nav-glass">
       <div className="header-frame flex items-center justify-between gap-3 py-3.5 xl:gap-4">
         <NavLink to="/" className="flex min-w-0 flex-1 items-center gap-3 xl:flex-none xl:min-w-[260px] 2xl:min-w-[300px]">
-          <div className="logo-glow hero-logo-pulse aspect-square h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-electric-300/25 bg-slate-950/65 p-0.5 md:h-[70px] md:w-[70px]">
+          <div className="logo-glow aspect-square h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-electric-300/25 bg-slate-950/65 p-0.5 md:h-[70px] md:w-[70px]">
             <img src="/kpt-logo.png" alt="KusiPrimeTec Logo" className="h-full w-full scale-[1.32] object-contain" loading="eager" />
           </div>
           <div className="min-w-0">
@@ -101,11 +104,11 @@ export function SiteHeader() {
 
         <div className="flex min-w-0 shrink-0 items-center gap-2">
           <a
-            href="tel:+491776364393"
+            href={`tel:${COMPANY_PROFILE.phoneHref}`}
             className="header-chip hidden h-10 items-center gap-2 whitespace-nowrap rounded-full border border-electric-300/35 bg-slate-900/55 px-4 text-sm font-semibold text-electric-200 transition hover:border-electric-200/60 hover:text-white 2xl:inline-flex"
           >
             <span>Telefon</span>
-            <span className="hidden tracking-[0.02em] min-[1760px]:inline">0177 6364393</span>
+            <span className="hidden tracking-[0.02em] min-[1760px]:inline">{COMPANY_PROFILE.phoneDisplay}</span>
           </a>
           <NavLink
             to={accountHref}
@@ -125,6 +128,7 @@ export function SiteHeader() {
           <button
             type="button"
             aria-label="Navigation öffnen"
+            aria-expanded={open}
             className="btn-secondary-premium inline-flex h-10 w-10 items-center justify-center rounded-xl xl:hidden"
             onClick={() => setOpen((value) => !value)}
           >
@@ -139,11 +143,11 @@ export function SiteHeader() {
             <LinkItem key={item.href} href={item.href} label={item.label} />
           ))}
           <LinkItem href={accountHref} label={accountLabel} />
-          <a href="tel:+491776364393" className="btn-secondary-premium header-chip mt-1 inline-flex items-center justify-center px-3 py-2 text-sm font-semibold">
-            Telefon 0177 6364393
+          <a href={`tel:${COMPANY_PROFILE.phoneHref}`} className="btn-secondary-premium header-chip mt-1 inline-flex items-center justify-center px-3 py-2 text-sm font-semibold">
+            Telefon {COMPANY_PROFILE.phoneDisplay}
           </a>
           <a
-            href="https://wa.me/491776364393?text=Hallo%20KusiPrimeTec%2C%20ich%20brauche%20Unterstützung."
+            href={COMPANY_PROFILE.whatsappHref}
             target="_blank"
             rel="noopener noreferrer"
             className="btn-secondary-premium header-chip inline-flex items-center justify-center px-3 py-2 text-sm font-semibold"

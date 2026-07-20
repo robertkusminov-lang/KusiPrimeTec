@@ -29,7 +29,7 @@
   projectCoordination: {
     basePercent: 15,
     maxComplexityPercent: 20,
-    text: "ab 15 % vom Projektvolumen, bei hoher Komplexität nach Abstimmung",
+    text: "ab 15 % des Projektvolumens, bei hoherer Komplexitat bis zu 20 % nach Abstimmung",
   },
   scope: {
     allowed: [
@@ -52,9 +52,17 @@
 } as const;
 
 export const COMPANY_PROFILE = {
+  name: "KusiPrimeTec",
+  ownerName: "Robert Kusminov",
   tagline: "Technischer Immobilienservice im Bestand",
   addressStreet: "Epplerinweg 31",
   addressZipCity: "73614 Schorndorf",
   addressLine: "Epplerinweg 31, 73614 Schorndorf",
   serviceRadiusLine: "Einsatzradius: 30 km ab 73614 Schorndorf",
+  serviceAreaHeadline: "Schorndorf und 30 km Umgebung",
+  phoneDisplay: "0177 6364393",
+  phoneHref: "+491776364393",
+  whatsappHref: "https://wa.me/491776364393?text=Hallo%20KusiPrimeTec%2C%20ich%20habe%20eine%20Anfrage.",
+  email: "info@kusiprimetec.de",
+  websiteUrl: "https://kusiprimetec.de",
 } as const;

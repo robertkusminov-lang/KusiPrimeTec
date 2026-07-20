@@ -1,143 +1,54 @@
-﻿import { NavLink } from "react-router-dom";
+import { NavLink } from "react-router-dom";
+import { Accordion } from "@/components/ui/Accordion";
 import { LazySection } from "@/components/ui/LazySection";
+import {
+  OBJECT_CARE_EXTRA_RULES,
+  OBJECT_CARE_FAQS,
+  OBJECT_CARE_INCLUDED,
+  OBJECT_CARE_PACKAGES,
+  OBJECT_CARE_RULES,
+  OBJECT_CARE_TARGET_GROUPS,
+  PROBLEM_POINTS,
+  PUBLIC_OFFER_CONFIG,
+} from "@/data/publicWebsite";
 import { useSeo } from "@/hooks/useSeo";
+import { buildServiceSchema, ORGANIZATION_SCHEMA } from "@/lib/seoData";
 
-const benefits = [
-  "Fester technischer Ansprechpartner für das Objekt",
-  "Planbare monatliche Kosten",
-  "Weniger Einzelbeauftragungen",
-  "Kleinreparaturen im zulässigen Rahmen",
-  "Kurzfristige Unterstützung nach Verfügbarkeit",
-  "Regelmäßige Rundgänge und Sichtkontrollen nach Bedarf",
-  "Aufnahme und Dokumentation sichtbarer Mängel",
-  "Flexible Nutzung des Stundenkontingents",
-  "Nicht genutzte Stunden bis zu 2 Monate übertragbar",
-  "Zusatzleistungen werden bei Bedarf vorab abgestimmt",
-  "Unterstützung bei der Koordination externer Fachfirmen",
-  "Bessere Planbarkeit von Instandhaltung und kleineren Maßnahmen",
-];
+const documentationPoints = [
+  "Digitale Tickets mit Kunden- und Objektzuordnung",
+  "Nachvollziehbare Rapport- und Fotodokumentation",
+  "Priorisierte Mängel- und Maßnahmenübersicht",
+  "Klare Rückmeldungen an Ansprechpartner, Verwaltung oder Eigentum",
+  "Saubere Vorbereitung für weiterführende Fachfirmen",
+] as const;
 
-const packages = [
-  {
-    name: "Objektbetreuung Start",
-    price: "399 € / Monat",
-    hours: "inkl. 8 Stunden Betreuungskontingent",
-    audience: "Ideal für kleinere Gewerbeflächen, Märkte, Praxen, Büros oder Bestandsobjekte, bei denen regelmäßig kleinere technische Themen anfallen.",
-    points: [
-      "8 Stunden monatliches Betreuungskontingent",
-      "1 geplanter Sammeltermin pro Monat",
-      "Technische Rundgänge nach Bedarf",
-      "Kleinreparaturen im zulässigen Rahmen",
-      "Kurzfristige Unterstützung bei kleineren technischen Themen nach Verfügbarkeit",
-      "Aufnahme sichtbarer Mängel",
-      "Kleinere Reparaturen an Ausstattung und Mobiliar",
-      "Austausch einfacher Gebäudekomponenten",
-      "Kurze Fotodokumentation",
-      "Rückmeldung an Ansprechpartner",
-    ],
-  },
-  {
-    name: "Objektbetreuung Plus",
-    price: "599 € / Monat",
-    hours: "inkl. 12 Stunden Betreuungskontingent",
-    audience: "Empfohlen für Märkte, Gewerbeobjekte, Unternehmen, Praxen, Läden und Standorte mit regelmäßigem technischem Betreuungsbedarf.",
-    featured: true,
-    points: [
-      "12 Stunden monatliches Betreuungskontingent",
-      "Bis zu 2 geplante Betreuungstermine pro Monat",
-      "Technische Rundgänge",
-      "Störungsaufnahme",
-      "Kleinreparaturen im zulässigen Rahmen",
-      "Kurzfristige Unterstützung nach Verfügbarkeit",
-      "Aufnahme und Dokumentation sichtbarer Mängel",
-      "Kleinere Instandhaltungsarbeiten im Bestand",
-      "Reparaturen an Ausstattung, Mobiliar und einfachen Gebäudekomponenten",
-      "Fotodokumentation nach Bedarf",
-      "Priorisierung offener Punkte",
-      "Koordination externer Fachfirmen nach Absprache",
-      "Bevorzugte Terminplanung gegenüber Einzelaufträgen",
-    ],
-  },
-  {
-    name: "Objektbetreuung Premium",
-    price: "899 € / Monat",
-    hours: "inkl. 16 Stunden Betreuungskontingent",
-    audience: "Für größere Gewerbeobjekte, Märkte mit höherem technischem Bedarf oder Kunden, die eine stärkere laufende Betreuung wünschen.",
-    points: [
-      "16 Stunden monatliches Betreuungskontingent",
-      "Bis zu 3 geplante Betreuungstermine pro Monat",
-      "Regelmäßige technische Objektkontrollen",
-      "Laufende Mängel- und Maßnahmenliste",
-      "Störungsaufnahme und technische Einschätzung",
-      "Kleinreparaturen und Instandhaltung im Bestand",
-      "Kurzfristige Unterstützung nach Verfügbarkeit",
-      "Austausch einfacher Gebäudekomponenten",
-      "Reparaturen an Ausstattung und Mobiliar",
-      "Fotodokumentation",
-      "Monatlicher Kurzbericht nach Bedarf",
-      "Koordination externer Fachfirmen nach Absprache",
-      "Bevorzugte Einsatzplanung",
-      "Direkter technischer Ansprechpartner",
-    ],
-  },
-  {
-    name: "Objektbetreuung Individuell",
-    price: "individuell kalkuliert",
-    hours: "Leistungsumfang nach Objekt, Intervall und Bedarf abgestimmt",
-    audience: "Für Kunden mit mehreren Standorten, besonderen Betriebszeiten oder erweitertem Koordinations-, Dokumentations- und Betreuungsbedarf.",
-    points: [
-      "Individuell abgestimmtes Betreuungskonzept",
-      "Flexible Stundenkontingente oder feste Betreuungstermine",
-      "Betreuung mehrerer Standorte möglich",
-      "Erweiterte Maßnahmenlisten und Priorisierung",
-      "Abgestimmte Rückmelde- und Dokumentationswege",
-      "Eigenes Angebot nach Erstgespräch und Objektbewertung",
-    ],
-  },
-];
-
-const flexibleRules = [
-  "Nicht genutzte Stunden können bis zu 2 Monate übertragen werden.",
-  "Übertragene Stunden müssen innerhalb dieser 2 Monate genutzt werden.",
-  "Danach verfallen nicht genutzte Stunden.",
-  "Eine Auszahlung nicht genutzter Stunden ist ausgeschlossen.",
-  "Die Übertragung gilt nur bei laufender Objektbetreuung.",
-  "Material, Ersatzteile und Fremdleistungen werden separat berechnet.",
-];
-
-const contractRules = [
-  "3 Monate Pilotphase",
-  "danach automatische Mindestvertragslaufzeit von 6 Monaten, sofern nicht spätestens 14 Tage vor Ablauf der Pilotphase schriftlich beendet wird",
-  "nach Ablauf der Mindestlaufzeit automatische Verlängerung auf unbestimmte Zeit",
-  "Kündigung danach mit 4 Wochen Frist zum Monatsende",
-];
-
-function PackageCard({ item }: { item: (typeof packages)[number] }) {
-  return (
-    <article className={`premium-card relative flex h-full flex-col p-5 ${item.featured ? "border-electric-300/55 bg-electric-400/10" : "border-[var(--line)]"}`}>
-      {item.featured ? (
-        <span className="absolute right-4 top-4 rounded-full border border-electric-200/45 bg-electric-400/15 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-electric-200">
-          Empfohlen
-        </span>
-      ) : null}
-      <p className="pr-28 text-xs uppercase tracking-[0.12em] text-electric-300">{item.name}</p>
-      <p className="mt-2 text-3xl font-extrabold text-white">{item.price}</p>
-      <p className="mt-1 text-sm font-semibold text-electric-100">{item.hours}</p>
-      <p className="mt-4 min-h-[96px] text-sm leading-relaxed text-[var(--text-soft)]">{item.audience}</p>
-      <ul className="mt-4 grid gap-2 text-sm text-[var(--text-main)]">
-        {item.points.map((point) => (
-          <li key={point} className="flex gap-2"><span className="mt-0.5 text-electric-300">✓</span><span>{point}</span></li>
-        ))}
-      </ul>
-    </article>
-  );
-}
+const limits = [
+  "Keine garantierte Sofortverfügbarkeit oder 24/7-Notdienst",
+  "Keine gesetzliche Prüfung, Abnahme oder eigenverantwortliche Errichtung elektrotechnischer Anlagen",
+  "Fachpflichtige Arbeiten werden nicht als eigene Ausführung angeboten",
+  "Fachliche Verantwortung, Ausführung und Gewährleistung verbleiben bei beauftragten Fachunternehmen",
+] as const;
 
 export default function ObjektbetreuungPage() {
   useSeo({
-    title: "Objektbetreuung & technischer Immobilienservice | KusiPrimeTec Schorndorf",
+    title: "ObjektBetreuung für Gewerbeobjekte und Bestandsimmobilien | KusiPrimeTec",
     description:
-      "KusiPrimeTec bietet technische Objektbetreuung für Gewerbeobjekte und Bestandsimmobilien im Raum Schorndorf: Kleinreparaturen im zulässigen Rahmen, Rundgänge, Mängeldokumentation und Instandhaltung im Bestand.",
+      "ObjektBetreuung als Kernangebot von KusiPrimeTec: planbare technische Entlastung mit festem Ansprechpartner, monatlichem Kontingent, digitaler Dokumentation und koordinierter Fachfirmensteuerung.",
+    canonicalPath: "/objektbetreuung",
+    structuredData: [
+      ORGANIZATION_SCHEMA,
+      buildServiceSchema({
+        name: "ObjektBetreuung",
+        description:
+          "Planbare technische Entlastung mit festem Ansprechpartner, geplanten Sammelterminen, dokumentierten Abläufen und koordinierter Nachverfolgung offener Punkte.",
+        urlPath: "/objektbetreuung",
+        offers: OBJECT_CARE_PACKAGES.map((pkg) => ({
+          name: pkg.name,
+          description: `${pkg.hoursLabel} und ${pkg.cadenceLabel}.`,
+          ...(pkg.priceEur ? { price: pkg.priceEur } : {}),
+        })),
+      }),
+    ],
   });
 
   return (
@@ -145,78 +56,198 @@ export default function ObjektbetreuungPage() {
       <section className="premium-card premium-card-strong page-card-hero">
         <div className="max-w-4xl space-y-5">
           <p className="inline-flex rounded-full border border-electric-300/40 bg-slate-900/60 px-3 py-1 text-xs uppercase tracking-[0.14em] text-electric-300">
-            KusiPrimeTec Objektbetreuung
+            Kernprodukt ObjektBetreuung
           </p>
-          <h1 className="hero-display text-white">KusiPrimeTec Objektbetreuung</h1>
+          <h1 className="hero-display text-white">Planbare technische Entlastung mit festem Ansprechpartner und dokumentiertem Ablauf.</h1>
           <p className="hero-support text-electric-100">
-            Fester technischer Ansprechpartner für Gewerbeobjekte und Bestandsimmobilien
+            Die ObjektBetreuung ist das zentrale Angebot von KusiPrimeTec für Gewerbeobjekte und Bestandsimmobilien mit wiederkehrenden technischen Themen im laufenden Betrieb.
           </p>
-          <p className="public-page-lead max-w-4xl">
-            Mit der KusiPrimeTec Objektbetreuung erhalten Unternehmen, Märkte, Praxen, Büros und Eigentümer einen festen technischen Ansprechpartner für wiederkehrende kleinere Themen im laufenden Betrieb. Kleinreparaturen, Rundgänge, Mängelaufnahmen, kurzfristige Unterstützung nach Verfügbarkeit und kleinere Instandhaltungsarbeiten können gesammelt, geplant und zuverlässig abgearbeitet werden.
-          </p>
-          <div className="flex flex-wrap gap-3">
-            <NavLink to="/objektbetreuung-anfrage" className="btn-primary-premium rounded-full px-6 py-3 text-sm font-semibold">Objektbetreuung anfragen</NavLink>
-            <a href="https://wa.me/491776364393?text=Hallo%20KusiPrimeTec%2C%20ich%20interessiere%20mich%20für%20die%20Objektbetreuung." target="_blank" rel="noopener noreferrer" className="btn-secondary-premium rounded-full px-6 py-3 text-sm font-semibold">WhatsApp-Kontakt</a>
+          <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
+            <NavLink
+              to="/objektbetreuung-anfrage?anliegen=objektbetreuung"
+              className="btn-primary-premium inline-flex min-h-[54px] items-center justify-center rounded-full px-6 py-3 text-sm font-semibold"
+            >
+              ObjektBetreuung anfragen
+            </NavLink>
+            <NavLink
+              to="/objektcheck"
+              className="btn-secondary-premium inline-flex min-h-[54px] items-center justify-center rounded-full px-6 py-3 text-sm font-semibold"
+            >
+              ObjektCheck als Einstieg ansehen
+            </NavLink>
           </div>
         </div>
       </section>
 
-      <LazySection className="premium-card page-card-lg" minHeight={260} delayMs={40}>
-        <h2 className="text-2xl font-bold text-white md:text-3xl">Ihre Vorteile</h2>
-        <div className="mt-4 grid gap-2 md:grid-cols-2 xl:grid-cols-3">
-          {benefits.map((item) => <div key={item} className="rounded-xl border border-electric-300/20 bg-slate-950/35 px-3 py-2 text-sm text-[var(--text-main)]">✓ {item}</div>)}
+      <LazySection className="grid gap-4 xl:grid-cols-[0.95fr_1.05fr]" minHeight={260} delayMs={35}>
+        <article className="premium-card page-card">
+          <p className="text-xs uppercase tracking-[0.12em] text-electric-300">Geeignet für</p>
+          <h2 className="mt-2 text-2xl font-bold text-white">Welche Kunden besonders profitieren</h2>
+          <div className="mt-4 flex flex-wrap gap-2">
+            {OBJECT_CARE_TARGET_GROUPS.map((group) => (
+              <span key={group} className="rounded-full border border-[var(--line)] bg-slate-950/35 px-3 py-2 text-sm text-[var(--text-main)]">
+                {group}
+              </span>
+            ))}
+          </div>
+        </article>
+
+        <article className="premium-card page-card">
+          <p className="text-xs uppercase tracking-[0.12em] text-electric-300">Typische Ausgangslage</p>
+          <h2 className="mt-2 text-2xl font-bold text-white">Wenn Kleinthemen immer wieder Zeit und Übersicht kosten.</h2>
+          <div className="mt-4 grid gap-3">
+            {PROBLEM_POINTS.map((point) => (
+              <div key={point} className="rounded-2xl border border-[var(--line)] bg-slate-950/35 px-4 py-3 text-sm text-[var(--text-main)]">
+                {point}
+              </div>
+            ))}
+          </div>
+        </article>
+      </LazySection>
+
+      <LazySection className="premium-card page-card-lg" minHeight={260} delayMs={50}>
+        <p className="text-xs uppercase tracking-[0.12em] text-electric-300">Enthaltene Leistungen</p>
+        <h2 className="mt-2 text-2xl font-bold text-white md:text-3xl">Was die ObjektBetreuung im Alltag leistet</h2>
+        <div className="mt-5 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+          {OBJECT_CARE_INCLUDED.map((item) => (
+            <article key={item} className="premium-card border border-electric-300/20 p-4 text-sm text-[var(--text-main)]">
+              {item}
+            </article>
+          ))}
         </div>
       </LazySection>
 
-      <LazySection className="space-y-5" minHeight={420} delayMs={60}>
-        <header className="max-w-3xl">
+      <LazySection className="premium-card premium-card-strong page-card-lg" minHeight={260} delayMs={65}>
+        <div className="grid gap-6 xl:grid-cols-[0.95fr_1.05fr] xl:items-start">
+          <div>
+            <p className="text-xs uppercase tracking-[0.12em] text-electric-300">Digitale Dokumentation</p>
+            <h2 className="mt-2 text-2xl font-bold text-white md:text-3xl">Nicht nur erledigen, sondern nachvollziehbar festhalten.</h2>
+            <p className="mt-3 text-sm leading-relaxed text-[var(--text-soft)] md:text-base">
+              Die ObjektBetreuung verbindet praktische Bestandsarbeit mit strukturierter Dokumentation, damit offene Punkte, Maßnahmen und Rückmeldungen nicht im Tagesgeschäft verloren gehen.
+            </p>
+          </div>
+          <div className="grid gap-3">
+            {documentationPoints.map((point) => (
+              <div key={point} className="rounded-2xl border border-[var(--line)] bg-slate-950/40 px-4 py-3 text-sm text-[var(--text-main)]">
+                {point}
+              </div>
+            ))}
+          </div>
+        </div>
+      </LazySection>
+
+      <LazySection className="space-y-5" minHeight={520} delayMs={80}>
+        <header className="max-w-4xl space-y-3">
           <p className="text-xs uppercase tracking-[0.12em] text-electric-300">Pakete</p>
-          <h2 className="mt-2 text-2xl font-bold text-white md:text-3xl">Objektbetreuung-Pakete</h2>
-          <p className="mt-2 text-sm text-[var(--text-soft)]">Monatliche technische Betreuung für Gewerbeobjekte und Bestandsimmobilien mit klaren Stundenkontingenten oder individuell abgestimmtem Leistungsumfang.</p>
+          <h2 className="text-2xl font-bold text-white md:text-3xl">Vier Betreuungsmodelle für unterschiedliche Objektgrößen.</h2>
+          <p className="text-sm leading-relaxed text-[var(--text-soft)] md:text-base">
+            Das Plus-Paket ist das empfohlene Hauptpaket für laufende Gewerbe- und Bestandsbetreuung. Individuelle Konzepte bleiben für mehrere Standorte oder besondere Taktungen möglich.
+          </p>
         </header>
+
         <div className="grid gap-4 md:grid-cols-2 2xl:grid-cols-4">
-          {packages.map((item) => <PackageCard key={item.name} item={item} />)}
+          {OBJECT_CARE_PACKAGES.map((pkg) => (
+            <article
+              key={pkg.id}
+              className={`premium-card relative flex h-full flex-col p-5 ${pkg.featured ? "border-electric-300/60 bg-electric-400/10" : "border-[var(--line)]"}`}
+            >
+              {pkg.featured ? (
+                <span className="absolute right-4 top-4 rounded-full border border-electric-200/45 bg-electric-400/15 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-electric-200">
+                  Empfohlen
+                </span>
+              ) : null}
+              <p className="pr-24 text-xs uppercase tracking-[0.12em] text-electric-300">{pkg.name}</p>
+              <p className="mt-3 text-3xl font-extrabold text-white">{pkg.priceLabel}</p>
+              <p className="mt-1 text-sm font-semibold text-electric-100">{pkg.hoursLabel}</p>
+              <p className="mt-1 text-sm text-[var(--text-soft)]">{pkg.cadenceLabel}</p>
+              <p className="mt-4 text-sm leading-relaxed text-[var(--text-soft)]">{pkg.audience}</p>
+              <ul className="mt-4 grid gap-2 text-sm text-[var(--text-main)]">
+                {pkg.points.map((point) => (
+                  <li key={point} className="flex gap-2">
+                    <span className="text-electric-300">✓</span>
+                    <span>{point}</span>
+                  </li>
+                ))}
+              </ul>
+            </article>
+          ))}
         </div>
       </LazySection>
 
-      <LazySection className="grid gap-4 lg:grid-cols-2" minHeight={300} delayMs={80}>
+      <LazySection className="grid gap-4 lg:grid-cols-2" minHeight={320} delayMs={95}>
         <article className="premium-card page-card">
-          <h2 className="text-xl font-bold text-white">Flexible Stundenregelung</h2>
-          <ul className="mt-3 grid gap-2 text-sm text-[var(--text-main)]">{flexibleRules.map((rule) => <li key={rule}>• {rule}</li>)}</ul>
+          <p className="text-xs uppercase tracking-[0.12em] text-electric-300">Pilotphase und Vertragslogik</p>
+          <h2 className="mt-2 text-xl font-bold text-white">Planbar starten, sauber weiterführen.</h2>
+          <ul className="mt-4 grid gap-2 text-sm text-[var(--text-main)]">
+            {OBJECT_CARE_RULES.map((rule) => (
+              <li key={rule}>• {rule}</li>
+            ))}
+          </ul>
         </article>
+
         <article className="premium-card page-card">
-          <h2 className="text-xl font-bold text-white">Zusatzleistungen nach Abstimmung</h2>
-          <p className="mt-3 text-sm leading-relaxed text-[var(--text-soft)]">
-            Zusätzliche Arbeiten außerhalb des laufenden Betreuungskontingents werden ausschließlich nach vorheriger Abstimmung eingeplant. Umfangreichere Maßnahmen, Projektarbeiten oder größere Reparaturen können separat kalkuliert und als eigenes Angebot dargestellt werden.
-          </p>
-        </article>
-        <article className="premium-card page-card">
-          <h2 className="text-xl font-bold text-white">Akute Themen und kurzfristige Unterstützung</h2>
-          <p className="mt-3 text-sm leading-relaxed text-[var(--text-soft)]">
-            Bei akuten kleineren technischen Themen kann KusiPrimeTec während einer aktiven Objektbetreuung kurzfristig unterstützen, sofern es terminlich möglich ist. Ist noch Betreuungskontingent verfügbar, wird der Einsatz auf das vorhandene Stundenkontingent angerechnet. Ist das Kontingent ausgeschöpft, werden weitere Schritte vorab abgestimmt. Kurzfristige Einsätze erfolgen nach Verfügbarkeit. Ein Anspruch auf sofortige Verfügbarkeit oder ein garantierter Notdienst besteht nicht, sofern dies nicht ausdrücklich separat vereinbart wurde.
-          </p>
-        </article>
-        <article className="premium-card page-card">
-          <h2 className="text-xl font-bold text-white">Start mit Pilotphase</h2>
-          <ul className="mt-3 grid gap-2 text-sm text-[var(--text-main)]">{contractRules.map((rule) => <li key={rule}>• {rule}</li>)}</ul>
+          <p className="text-xs uppercase tracking-[0.12em] text-electric-300">Zusatzleistungen</p>
+          <h2 className="mt-2 text-xl font-bold text-white">Zusätzliche Arbeiten bleiben abstimmbar.</h2>
+          <ul className="mt-4 grid gap-2 text-sm text-[var(--text-main)]">
+            {OBJECT_CARE_EXTRA_RULES.map((rule) => (
+              <li key={rule}>• {rule}</li>
+            ))}
+          </ul>
         </article>
       </LazySection>
 
-      <LazySection className="premium-card page-card-lg" minHeight={200} delayMs={110}>
-        <p className="text-xs uppercase tracking-[0.12em] text-electric-300">Leistungsabgrenzung</p>
-        <h2 className="mt-2 text-xl font-bold text-white">Hinweis zur Leistungsabgrenzung</h2>
-        <p className="mt-3 max-w-5xl text-sm leading-relaxed text-[var(--text-soft)] md:text-base">
-          KusiPrimeTec arbeitet als technischer Immobilienservice im Bereich Bestandsbetreuung, Wartung, Instandhaltung, Störungsaufnahme, Mängeldokumentation, Kleinreparaturen im zulässigen Rahmen und Projektkoordination. Nicht angeboten werden meisterpflichtige Arbeiten, Abnahmen, eigenverantwortliche Planung oder Errichtung elektrotechnischer Anlagen, Arbeiten an Zähleranlagen sowie Prüfungen oder Abnahmen, die gesetzlich oder handwerksrechtlich einem qualifizierten Fachbetrieb vorbehalten sind. Soweit entsprechende Facharbeiten erforderlich sind, werden qualifizierte Fachfirmen hinzugezogen oder koordiniert.
+      <LazySection className="premium-card page-card-lg" minHeight={240} delayMs={110}>
+        <p className="text-xs uppercase tracking-[0.12em] text-electric-300">Leistungsabgrenzung und Fachfirmenkoordination</p>
+        <h2 className="mt-2 text-2xl font-bold text-white">Klare Grenzen schützen die Zusammenarbeit.</h2>
+        <p className="mt-3 text-sm leading-relaxed text-[var(--text-soft)] md:text-base">{PUBLIC_OFFER_CONFIG.scope.summary}</p>
+        <div className="mt-5 grid gap-3 md:grid-cols-2">
+          {limits.map((item) => (
+            <article key={item} className="rounded-2xl border border-[var(--line)] bg-slate-950/35 px-4 py-4 text-sm text-[var(--text-main)]">
+              {item}
+            </article>
+          ))}
+        </div>
+        <div className="mt-5 grid gap-3 md:grid-cols-2">
+          {PUBLIC_OFFER_CONFIG.projectCoordination.includes.slice(0, 6).map((item) => (
+            <article key={item} className="rounded-2xl border border-electric-300/20 bg-slate-950/40 px-4 py-4 text-sm text-[var(--text-main)]">
+              {item}
+            </article>
+          ))}
+        </div>
+        <p className="mt-4 text-sm leading-relaxed text-[var(--text-soft)]">{PUBLIC_OFFER_CONFIG.projectCoordination.note}</p>
+      </LazySection>
+
+      <LazySection className="premium-card page-card-lg" minHeight={240} delayMs={125}>
+        <p className="text-xs uppercase tracking-[0.12em] text-electric-300">Häufige Fragen</p>
+        <h2 className="mt-2 text-2xl font-bold text-white">Was Kunden vor dem Einstieg meist wissen möchten</h2>
+        <div className="mt-5 grid gap-3">
+          {OBJECT_CARE_FAQS.map((faq) => (
+            <Accordion key={faq.question} title={faq.question}>
+              <p className="text-sm leading-relaxed text-[var(--text-soft)]">{faq.answer}</p>
+            </Accordion>
+          ))}
+        </div>
+      </LazySection>
+
+      <LazySection className="premium-card premium-card-strong page-card-lg text-center" minHeight={190} delayMs={140}>
+        <p className="text-xs uppercase tracking-[0.12em] text-electric-300">Anfrage</p>
+        <h2 className="mt-2 text-2xl font-bold text-white md:text-3xl">ObjektBetreuung jetzt sauber anstoßen</h2>
+        <p className="mx-auto mt-3 max-w-3xl text-sm leading-relaxed text-[var(--text-soft)] md:text-base">
+          Beschreiben Sie Objekt, Ansprechpartner und gewünschten Umfang. Die Anfrage läuft weiterhin getrennt vom operativen Ticket-Flow als Interessenten- und Beratungsprozess.
         </p>
-      </LazySection>
-
-      <LazySection className="premium-card premium-card-strong page-card-lg text-center" minHeight={170} delayMs={130}>
-        <p className="text-xs uppercase tracking-[0.12em] text-electric-300">Nächster Schritt</p>
-        <h2 className="mt-2 text-2xl font-bold text-white md:text-3xl">Objektbetreuung anfragen</h2>
-        <p className="mx-auto mt-2 max-w-2xl text-sm leading-relaxed text-[var(--text-soft)]">Beschreiben Sie kurz Ihr Objekt und den gewünschten Leistungsumfang. Wir melden uns mit einer klaren Ersteinschätzung und passenden nächsten Schritten.</p>
-        <div className="mt-5 flex flex-wrap justify-center gap-3">
-          <NavLink to="/objektbetreuung-anfrage" className="btn-primary-premium rounded-full px-6 py-3 text-sm font-semibold">Pilotphase starten</NavLink>
-          <NavLink to="/objektbetreuung-anfrage" className="btn-secondary-premium rounded-full px-6 py-3 text-sm font-semibold">Angebot anfordern</NavLink>
+        <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:justify-center">
+          <NavLink
+            to="/objektbetreuung-anfrage?anliegen=objektbetreuung"
+            className="btn-primary-premium inline-flex min-h-[54px] items-center justify-center rounded-full px-6 py-3 text-sm font-semibold"
+          >
+            ObjektBetreuung anfragen
+          </NavLink>
+          <NavLink
+            to="/objektbetreuung-anfrage?anliegen=individuell"
+            className="btn-secondary-premium inline-flex min-h-[54px] items-center justify-center rounded-full px-6 py-3 text-sm font-semibold"
+          >
+            Individuelles Konzept besprechen
+          </NavLink>
         </div>
       </LazySection>
     </div>

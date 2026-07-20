@@ -1,14 +1,23 @@
-﻿import { BUSINESS_RULES } from "@/config/businessRules";
+import { BUSINESS_RULES } from "@/config/businessRules";
+import { PUBLIC_OFFER_CONFIG } from "@/data/publicWebsite";
 
 export const NAV_PUBLIC = [
   { href: "/", label: "Startseite" },
+  { href: "/objektbetreuung", label: "ObjektBetreuung" },
+  { href: "/objektcheck", label: "ObjektCheck" },
   { href: "/leistungen", label: "Leistungen" },
-  { href: "/objektbetreuung", label: "Objektbetreuung" },
-  { href: "/preise", label: "Preise" },
-  { href: "/ablauf", label: "Ablauf" },
-  { href: "/buchen", label: "Anfragen" },
+  { href: "/referenzen", label: "Referenzen" },
+  { href: "/ueber-kusiprimetec", label: "Über KusiPrimeTec" },
+  { href: "/objektbetreuung-anfrage", label: "Anfrage" },
   { href: "/konto/anmelden", label: "Kundenlogin" },
 ];
+
+export const NAV_PUBLIC_SECONDARY = [
+  { href: "/preise", label: "Preise" },
+  { href: "/ablauf", label: "Ablauf" },
+  { href: "/buchen", label: "Anfragewege" },
+  { href: "/einzelauftrag", label: "Einzelauftrag" },
+] as const;
 
 export const FOOTER_LINKS = [
   { href: "/impressum", label: "Impressum" },
@@ -55,28 +64,43 @@ export const PREISE = {
 };
 
 export const ABLAUF = [
-  "Anfrage oder Ticket für Objekt, Standort und Thema erfassen",
-  "Technische Einordnung, Sichtung und Priorisierung im Bestand",
-  "Terminabstimmung mit Ansprechpartner vor Ort",
-  "Umsetzung im zulässigen Rahmen oder strukturierte Koordination externer Fachfirmen",
-  "Rapport, Nachweis und klare Rückmeldung für die Objektakte",
+  "Anliegen oder Objekt aufnehmen",
+  "Situation strukturiert prüfen",
+  "Maßnahmen priorisieren",
+  "Direkt bearbeiten oder Fachfirma koordinieren",
+  "Ergebnis dokumentieren",
+  "Offene Punkte nachverfolgen",
 ];
 
 export const PUBLIC_PATHS = [
   {
-    href: "/einzelauftrag",
-    title: "Einzelauftrag anfragen",
-    text: "Für einmalige Einsätze, Kleinreparaturen, Störungsaufnahme, Terminwünsche oder Rückfragen im Bestand.",
+    href: "/objektbetreuung-anfrage?anliegen=objektbetreuung",
+    title: "ObjektBetreuung anfragen",
+    text: "Für planbare laufende Betreuung mit festem Ansprechpartner, Betreuungskontingent, Dokumentation und klaren Sammelterminen.",
+    buttonLabel: "ObjektBetreuung anfragen",
+    eyebrow: "Hauptangebot",
+    featured: true,
   },
   {
-    href: "/objektbetreuung-anfrage",
-    title: "ObjektBetreuung anfragen",
-    text: "Für laufende technische Objektbetreuung, ObjektCheck, Beratung und strukturierte Betreuungspakete.",
+    href: "/objektbetreuung-anfrage?anliegen=objektcheck",
+    title: "ObjektCheck buchen",
+    text: `Strukturierter Einstieg für ${PUBLIC_OFFER_CONFIG.objectCheck.priceLabel} mit Vor-Ort-Begehung, Fotodokumentation und kompakter Maßnahmenübersicht.`,
+    buttonLabel: "ObjektCheck anfragen",
+    eyebrow: "Einstiegsprodukt",
+  },
+  {
+    href: "/einzelauftrag",
+    title: "Einzelauftrag melden",
+    text: "Für operative Einzelthemen, Störungsaufnahme, Kleinreparaturen und einmalige Einsätze im Bestand innerhalb des bestehenden Ticket-Flows.",
+    buttonLabel: "Einzelauftrag öffnen",
+    eyebrow: "Sekundär",
   },
   {
     href: "/konto/anmelden",
     title: "Kundenlogin",
     text: "Nur für bestehende Kunden mit zugewiesenem Kundenkonto und freigeschalteten Objekten.",
+    buttonLabel: "Kundenlogin öffnen",
+    eyebrow: "Bestandskunden",
   },
 ] as const;
 

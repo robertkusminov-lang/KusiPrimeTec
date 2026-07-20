@@ -294,6 +294,8 @@ export default function CustomerPortalPage() {
   useSeo({
     title: "Kundenportal - KusiPrimeTec",
     description: "Objekte, Tickets und Dokumentation für Ihr KusiPrimeTec Kundenkonto.",
+    canonicalPath: "/konto",
+    robots: "noindex,nofollow",
   });
 
   async function loadObjectNotes(objectId: string) {
