@@ -17,6 +17,8 @@ export default function CustomerAuthPage() {
   useSeo({
     title: "Kundenlogin - KusiPrimeTec",
     description: "Anmeldung für bestehende Kunden mit freigeschaltetem Kundenkonto und zugewiesenen Objekten.",
+    canonicalPath: "/konto/anmelden",
+    robots: "noindex,nofollow",
   });
 
   useEffect(() => {

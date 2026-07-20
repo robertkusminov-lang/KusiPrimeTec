@@ -22,18 +22,50 @@ export function LazySection({
     const node = ref.current;
     if (!node) return;
 
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches || !("IntersectionObserver" in window)) {
+      setVisible(true);
+      return;
+    }
+
+    let timeoutId: number | null = null;
+    let idleId: number | null = null;
+    let revealed = false;
+
+    const reveal = () => {
+      if (revealed) return;
+      revealed = true;
+      setVisible(true);
+      observer.disconnect();
+    };
+
     const observer = new IntersectionObserver(
       (entries) => {
         if (entries.some((entry) => entry.isIntersecting)) {
-          setVisible(true);
-          observer.disconnect();
+          reveal();
         }
       },
       { rootMargin: "180px 0px" }
     );
 
     observer.observe(node);
-    return () => observer.disconnect();
+
+    // Fallback: reveal off-screen marketing sections shortly after mount so smaller
+    // screens and full-page captures do not show large empty gaps before scroll.
+    if (typeof globalThis.requestIdleCallback === "function") {
+      idleId = globalThis.requestIdleCallback(reveal, { timeout: 280 });
+    } else {
+      timeoutId = globalThis.setTimeout(reveal, 220);
+    }
+
+    return () => {
+      observer.disconnect();
+      if (idleId !== null && typeof globalThis.cancelIdleCallback === "function") {
+        globalThis.cancelIdleCallback(idleId);
+      }
+      if (timeoutId !== null) {
+        globalThis.clearTimeout(timeoutId);
+      }
+    };
   }, []);
 
   return (

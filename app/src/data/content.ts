@@ -2,13 +2,21 @@
 
 export const NAV_PUBLIC = [
   { href: "/", label: "Startseite" },
+  { href: "/objektbetreuung", label: "ObjektBetreuung" },
+  { href: "/objektcheck", label: "ObjektCheck" },
   { href: "/leistungen", label: "Leistungen" },
-  { href: "/objektbetreuung", label: "Objektbetreuung" },
-  { href: "/preise", label: "Preise" },
-  { href: "/ablauf", label: "Ablauf" },
-  { href: "/buchen", label: "Anfragen" },
+  { href: "/referenzen", label: "Referenzen" },
+  { href: "/ueber-kusiprimetec", label: "Über KusiPrimeTec" },
+  { href: "/objektbetreuung-anfrage", label: "Anfrage" },
   { href: "/konto/anmelden", label: "Kundenlogin" },
 ];
+
+export const NAV_PUBLIC_SECONDARY = [
+  { href: "/preise", label: "Preise" },
+  { href: "/ablauf", label: "Ablauf" },
+  { href: "/buchen", label: "Anfragewege" },
+  { href: "/einzelauftrag", label: "Einzelauftrag" },
+] as const;
 
 export const FOOTER_LINKS = [
   { href: "/impressum", label: "Impressum" },
@@ -55,23 +63,24 @@ export const PREISE = {
 };
 
 export const ABLAUF = [
-  "Anfrage oder Ticket für Objekt, Standort und Thema erfassen",
-  "Technische Einordnung, Sichtung und Priorisierung im Bestand",
-  "Terminabstimmung mit Ansprechpartner vor Ort",
-  "Umsetzung im zulässigen Rahmen oder strukturierte Koordination externer Fachfirmen",
-  "Rapport, Nachweis und klare Rückmeldung für die Objektakte",
+  "Anliegen oder Objekt aufnehmen",
+  "Situation strukturiert prüfen",
+  "Maßnahmen priorisieren",
+  "Direkt bearbeiten oder Fachfirma koordinieren",
+  "Ergebnis dokumentieren",
+  "Offene Punkte nachverfolgen",
 ];
 
 export const PUBLIC_PATHS = [
   {
-    href: "/einzelauftrag",
-    title: "Einzelauftrag anfragen",
-    text: "Für einmalige Einsätze, Kleinreparaturen, Störungsaufnahme, Terminwünsche oder Rückfragen im Bestand.",
+    href: "/objektbetreuung-anfrage?anliegen=objektbetreuung",
+    title: "ObjektBetreuung oder ObjektCheck anfragen",
+    text: "Für laufende ObjektBetreuung, ObjektCheck Gewerbe, individuelle Betreuungskonzepte und eine unverbindliche Erstabstimmung.",
   },
   {
-    href: "/objektbetreuung-anfrage",
-    title: "ObjektBetreuung anfragen",
-    text: "Für laufende technische Objektbetreuung, ObjektCheck, Beratung und strukturierte Betreuungspakete.",
+    href: "/einzelauftrag",
+    title: "Einzelauftrag anfragen",
+    text: "Für operative Einzelthemen, Kleinreparaturen, Störungsaufnahme, Terminwünsche und einmalige Einsätze im Bestand.",
   },
   {
     href: "/konto/anmelden",

@@ -4,10 +4,39 @@ import { SiteHeader } from "./SiteHeader";
 import { SiteFooter } from "./SiteFooter";
 import { ConsentBanner } from "./ConsentBanner";
 
+const LEGAL_PATHS = new Set([
+  "/impressum",
+  "/datenschutz",
+  "/agb",
+  "/widerruf",
+  "/haftung-koordination",
+]);
+
 export function SiteLayout({ children }: PropsWithChildren) {
   const location = useLocation();
-  const showMobileCta = location.pathname !== "/buchen";
+  const hideMobileCta =
+    location.pathname === "/buchen" ||
+    location.pathname === "/objektbetreuung-anfrage" ||
+    location.pathname.startsWith("/konto") ||
+    LEGAL_PATHS.has(location.pathname);
+  const showMobileCta = !hideMobileCta;
   const [stickyVisible, setStickyVisible] = useState(false);
+
+  const stickyCta =
+    location.pathname === "/objektcheck"
+      ? {
+          href: "/objektbetreuung-anfrage?anliegen=objektcheck",
+          label: "ObjektCheck anfragen",
+        }
+      : location.pathname === "/einzelauftrag"
+        ? {
+            href: "/einzelauftrag",
+            label: "Einzelauftrag anfragen",
+          }
+        : {
+            href: "/objektbetreuung-anfrage?anliegen=objektbetreuung",
+            label: "ObjektBetreuung anfragen",
+          };
 
   useEffect(() => {
     if (!showMobileCta) {
@@ -31,8 +60,8 @@ export function SiteLayout({ children }: PropsWithChildren) {
 
       {showMobileCta ? (
         <div className={`mobile-sticky-cta fixed bottom-4 left-0 right-0 z-40 px-4 pb-[max(env(safe-area-inset-bottom),0px)] lg:hidden ${stickyVisible ? "visible" : ""}`}>
-          <NavLink to="/buchen" className="btn-primary-premium cta-pulse mx-auto flex w-full max-w-md items-center justify-center rounded-full px-6 py-3 text-sm font-semibold">
-            Jetzt Hilfe anfordern
+          <NavLink to={stickyCta.href} className="btn-primary-premium cta-pulse mx-auto flex w-full max-w-md items-center justify-center rounded-full px-6 py-3 text-sm font-semibold">
+            {stickyCta.label}
           </NavLink>
         </div>
       ) : null}

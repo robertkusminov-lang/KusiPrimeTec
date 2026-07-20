@@ -4,12 +4,15 @@ type LoaderModule = { default: ComponentType<unknown> };
 
 const publicRouteLoaders: Record<string, () => Promise<LoaderModule>> = {
   "/leistungen": () => import("@/pages/public/LeistungenPage"),
+  "/objektcheck": () => import("@/pages/public/ObjektcheckPage"),
   "/preise": () => import("@/pages/public/PreisePage"),
   "/ablauf": () => import("@/pages/public/AblaufPage"),
   "/objektbetreuung": () => import("@/pages/public/ObjektbetreuungPage"),
   "/buchen": () => import("@/pages/public/BuchenPage"),
   "/einzelauftrag": () => import("@/pages/public/EinzelauftragPage"),
   "/objektbetreuung-anfrage": () => import("@/pages/public/ObjektbetreuungAnfragePage"),
+  "/referenzen": () => import("@/pages/public/ReferenzenPage"),
+  "/ueber-kusiprimetec": () => import("@/pages/public/UeberKusiPrimeTecPage"),
   "/konto": () => import("@/pages/customer/CustomerPortalPage"),
   "/konto/anmelden": () => import("@/pages/customer/CustomerAuthPage"),
   "/impressum": () => import("@/pages/legal/ImpressumPage"),

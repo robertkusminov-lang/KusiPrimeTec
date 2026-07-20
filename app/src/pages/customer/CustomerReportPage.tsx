@@ -457,6 +457,7 @@ export default function CustomerReportPage() {
   useSeo({
     title: detail ? `Rapport ${detail.dokument_nummer} - KusiPrimeTec` : "Leistungsrapport - KusiPrimeTec",
     description: "Freigegebener Leistungsrapport im Kundenportal von KusiPrimeTec.",
+    robots: "noindex,nofollow",
   });
 
   const report = detail?.report;

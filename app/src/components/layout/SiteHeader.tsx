@@ -56,7 +56,7 @@ export function SiteHeader() {
   const [isSignedIn, setIsSignedIn] = useState(false);
   const location = useLocation();
 
-  const mainNavItems = NAV_PUBLIC.filter((item) => item.href !== "/konto");
+  const mainNavItems = NAV_PUBLIC.filter((item) => item.href !== "/konto" && item.href !== "/konto/anmelden");
   const accountHref = isSignedIn ? "/konto" : "/konto/anmelden";
   const accountLabel = isSignedIn ? "Kundenportal" : "Kundenlogin";
 
@@ -101,11 +101,11 @@ export function SiteHeader() {
 
         <div className="flex min-w-0 shrink-0 items-center gap-2">
           <a
-            href="tel:+491776364393"
+            href={`tel:${COMPANY_PROFILE.phoneHref}`}
             className="header-chip hidden h-10 items-center gap-2 whitespace-nowrap rounded-full border border-electric-300/35 bg-slate-900/55 px-4 text-sm font-semibold text-electric-200 transition hover:border-electric-200/60 hover:text-white 2xl:inline-flex"
           >
             <span>Telefon</span>
-            <span className="hidden tracking-[0.02em] min-[1760px]:inline">0177 6364393</span>
+            <span className="hidden tracking-[0.02em] min-[1760px]:inline">{COMPANY_PROFILE.phoneDisplay}</span>
           </a>
           <NavLink
             to={accountHref}
@@ -139,11 +139,11 @@ export function SiteHeader() {
             <LinkItem key={item.href} href={item.href} label={item.label} />
           ))}
           <LinkItem href={accountHref} label={accountLabel} />
-          <a href="tel:+491776364393" className="btn-secondary-premium header-chip mt-1 inline-flex items-center justify-center px-3 py-2 text-sm font-semibold">
-            Telefon 0177 6364393
+          <a href={`tel:${COMPANY_PROFILE.phoneHref}`} className="btn-secondary-premium header-chip mt-1 inline-flex items-center justify-center px-3 py-2 text-sm font-semibold">
+            Telefon {COMPANY_PROFILE.phoneDisplay}
           </a>
           <a
-            href="https://wa.me/491776364393?text=Hallo%20KusiPrimeTec%2C%20ich%20brauche%20Unterstützung."
+            href={COMPANY_PROFILE.whatsappHref}
             target="_blank"
             rel="noopener noreferrer"
             className="btn-secondary-premium header-chip inline-flex items-center justify-center px-3 py-2 text-sm font-semibold"

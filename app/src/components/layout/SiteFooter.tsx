@@ -1,6 +1,6 @@
-﻿import { NavLink } from "react-router-dom";
+import { NavLink } from "react-router-dom";
 import { COMPANY_PROFILE } from "@/config/businessRules";
-import { FOOTER_LINKS, NAV_PUBLIC } from "@/data/content";
+import { FOOTER_LINKS, NAV_PUBLIC, NAV_PUBLIC_SECONDARY } from "@/data/content";
 import { openConsentSettings } from "@/lib/consent";
 
 export function SiteFooter() {
@@ -13,15 +13,15 @@ export function SiteFooter() {
           <section className="space-y-3">
             <h2 className="text-sm font-semibold uppercase tracking-wide text-white">KusiPrimeTec</h2>
             <p className="text-sm text-[var(--text-soft)]">
-              Technischer Immobilienservice und handwerklich-technischer Allround-Service im zulässigen Rahmen für Wohn- und Gewerbeobjekte im Bestand.
+              Persönlicher technischer Immobilienservice für Gewerbeobjekte und Bestandsimmobilien mit klaren Abläufen, digitaler Dokumentation und persönlicher Betreuung.
             </p>
-            <p className="text-xs text-[var(--text-muted)]">Objektbetreuung · Kleinreparaturen im zulässigen Rahmen · Projektkoordination</p>
+            <p className="text-xs text-[var(--text-muted)]">ObjektBetreuung | ObjektCheck | Einzelauftrag | Projektkoordination</p>
           </section>
 
           <section className="space-y-3">
-            <h2 className="text-sm font-semibold uppercase tracking-wide text-white">Navigation</h2>
+            <h2 className="text-sm font-semibold uppercase tracking-wide text-white">Hauptnavigation</h2>
             <nav className="grid gap-2 text-sm text-[var(--text-soft)]">
-              {NAV_PUBLIC.map((item) => (
+              {NAV_PUBLIC.filter((item) => item.href !== "/konto/anmelden").map((item) => (
                 <NavLink key={item.href} to={item.href} className="transition-colors duration-200 hover:text-white">
                   {item.label}
                 </NavLink>
@@ -30,8 +30,16 @@ export function SiteFooter() {
           </section>
 
           <section className="space-y-3">
-            <h2 className="text-sm font-semibold uppercase tracking-wide text-white">Rechtliches</h2>
+            <h2 className="text-sm font-semibold uppercase tracking-wide text-white">Weitere Seiten</h2>
             <nav className="grid gap-2 text-sm text-[var(--text-soft)]">
+              {NAV_PUBLIC_SECONDARY.map((item) => (
+                <NavLink key={item.href} to={item.href} className="transition-colors duration-200 hover:text-white">
+                  {item.label}
+                </NavLink>
+              ))}
+            </nav>
+            <div className="grid gap-2 pt-2 text-sm text-[var(--text-soft)]">
+              <p className="text-xs font-semibold uppercase tracking-[0.12em] text-[var(--text-muted)]">Rechtliches</p>
               {FOOTER_LINKS.map((item) => (
                 <NavLink key={item.href} to={item.href} className="transition-colors duration-200 hover:text-white">
                   {item.label}
@@ -44,24 +52,28 @@ export function SiteFooter() {
               >
                 Cookie-Einstellungen
               </button>
-            </nav>
+            </div>
           </section>
 
           <section className="space-y-3">
             <h2 className="text-sm font-semibold uppercase tracking-wide text-white">Kontakt</h2>
             <div className="grid gap-2 text-sm text-[var(--text-soft)]">
-              <p>Robert Kusminov</p>
+              <p>{COMPANY_PROFILE.ownerName}</p>
               <p>{COMPANY_PROFILE.addressLine}</p>
-              <a href="tel:+491776364393" className="transition-colors duration-200 hover:text-white">Telefon: 0177 6364393</a>
+              <a href={`tel:${COMPANY_PROFILE.phoneHref}`} className="transition-colors duration-200 hover:text-white">
+                Telefon: {COMPANY_PROFILE.phoneDisplay}
+              </a>
               <a
-                href="https://wa.me/491776364393?text=Hallo%20KusiPrimeTec%2C%20ich%20habe%20eine%20Anfrage."
+                href={COMPANY_PROFILE.whatsappHref}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="transition-colors duration-200 hover:text-white"
               >
                 WhatsApp: Direkt-Chat öffnen
               </a>
-              <a href="mailto:info@kusiprimetec.de" className="transition-colors duration-200 hover:text-white">E-Mail: info@kusiprimetec.de</a>
+              <a href={`mailto:${COMPANY_PROFILE.email}`} className="transition-colors duration-200 hover:text-white">
+                E-Mail: {COMPANY_PROFILE.email}
+              </a>
               <p>{COMPANY_PROFILE.serviceRadiusLine}</p>
             </div>
           </section>
@@ -69,7 +81,7 @@ export function SiteFooter() {
 
         <div className="mt-8 flex flex-wrap items-center justify-between gap-3 border-t border-[var(--line)] pt-5 text-xs text-[var(--text-soft)]">
           <p>© {new Date().getFullYear()} KusiPrimeTec. Alle Rechte vorbehalten.</p>
-          <p>Technischer Immobilienservice · Transparente Preisstruktur · Saubere Leistungsabgrenzung</p>
+          <p>Technischer Immobilienservice | Strukturierte Betreuung | Saubere Leistungsabgrenzung</p>
         </div>
       </div>
     </footer>
