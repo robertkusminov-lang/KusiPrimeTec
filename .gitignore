@@ -1,0 +1,35 @@
+# Build-Artefakte
+node_modules/
+dist/
+coverage/
+
+# Logs
+*.log
+*.out
+*.err
+
+# Env
+.env
+.env.local
+.env.*.local
+
+# OS/Editor
+.DS_Store
+.vscode/
+
+# Supabase local
+.supabase/
+
+# Local Netlify folder
+.netlify
+
+# Local deployment metadata
+.netlify-api-data.json
+
+# Local screenshots and temp exports
+logs/
+api/.temp/
+api/supabase/.temp/
+
+# Local scratch files
+_tmp_*.txt

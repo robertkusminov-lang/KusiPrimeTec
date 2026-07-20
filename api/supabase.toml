@@ -1,0 +1,6 @@
+project_id = "kusiprimetec"
+
+[functions]
+verify_jwt = false
+
+

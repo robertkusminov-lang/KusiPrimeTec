@@ -1,0 +1,9 @@
+import { defineConfig } from "vitest/config";
+
+export default defineConfig({
+  test: {
+    include: ["unit/**/*.test.ts", "smoke/**/*.test.ts"],
+  },
+});
+
+

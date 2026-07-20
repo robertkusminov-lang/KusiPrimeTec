@@ -1,0 +1,21 @@
+{
+  "name": "kusiprimetec-platform",
+  "private": true,
+  "version": "1.0.0",
+  "workspaces": [
+    "app",
+    "tests"
+  ],
+  "scripts": {
+    "dev": "npm --prefix app run dev",
+    "dev:8888": "powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/start-web-8888.ps1",
+    "build": "npm --prefix app run build",
+    "typecheck": "npm --prefix app run typecheck",
+    "lint": "npm --prefix app run lint && npm --prefix tests run lint",
+    "test": "npm --prefix tests run test",
+    "smoke": "npm --prefix tests run smoke",
+    "supabase:link": "cd api && npx supabase link --project-ref $SUPABASE_PROJECT_REF",
+    "supabase:deploy": "cd api && npx supabase db push && powershell -NoProfile -ExecutionPolicy Bypass -File ../scripts/deploy-supabase-functions.ps1"
+  }
+}
+

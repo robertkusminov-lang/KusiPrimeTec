@@ -1,0 +1,13 @@
+{
+  "version": 2,
+  "buildCommand": "npm run build --workspace app",
+  "outputDirectory": "app/dist",
+  "rewrites": [
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
+    }
+  ]
+}
+
+
