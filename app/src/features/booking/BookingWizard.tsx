@@ -12,6 +12,7 @@ import { anfrageartToRequestType } from "@/lib/requestType";
 import { toUserMessage } from "@/lib/errors";
 import { TicketWizardPayload } from "@/types/domain";
 import { fileToBase64, MAX_UPLOAD_FILES, useUploadState, validateTicketFiles } from "./upload";
+import { createTicketSubmissionGuard } from "./submissionGuard";
 
 type WizardState = Omit<TicketWizardPayload, "attachments">;
 
@@ -372,6 +373,7 @@ export function BookingWizard({ initialAnfrageart = "direkt_einsatz", profilePre
   const [bookedRangesWarning, setBookedRangesWarning] = React.useState("");
   const [prefillApplied, setPrefillApplied] = React.useState(false);
   const [selectedObjectId, setSelectedObjectId] = React.useState("");
+  const submissionGuardRef = React.useRef(createTicketSubmissionGuard());
   const { files, setFiles, removeFile } = useUploadState();
   const emailFromAccount = String(profilePrefill?.kunde_email || "").trim();
 
@@ -660,6 +662,9 @@ export function BookingWizard({ initialAnfrageart = "direkt_einsatz", profilePre
       return;
     }
 
+    const idempotencyKey = submissionGuardRef.current.begin();
+    if (!idempotencyKey) return;
+    let submitted = false;
     setLoading(true);
     setError("");
     try {
@@ -670,6 +675,7 @@ export function BookingWizard({ initialAnfrageart = "direkt_einsatz", profilePre
         .join(" | ");
       const payload: TicketWizardPayload = {
         ...form,
+        idempotency_key: idempotencyKey,
         object_id: selectedObjectId || undefined,
         request_type: anfrageartToRequestType(form.anfrageart),
         plz: resolvedZip,
@@ -685,6 +691,7 @@ export function BookingWizard({ initialAnfrageart = "direkt_einsatz", profilePre
         attachments,
       };
       const result = await createTicket(payload);
+      submitted = true;
       setSuccess({ ticket_nummer: result.ticket_nummer });
       setForm({
         ...initialState,
@@ -700,6 +707,7 @@ export function BookingWizard({ initialAnfrageart = "direkt_einsatz", profilePre
       setError(toUserMessage(err, "Ticket konnte nicht erstellt werden."));
     } finally {
       setLoading(false);
+      submissionGuardRef.current.finish(submitted);
     }
   }
 

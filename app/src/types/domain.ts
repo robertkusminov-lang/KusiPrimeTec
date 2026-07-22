@@ -18,6 +18,7 @@ export type TicketStatus = (typeof TICKET_STATUSES)[number];
 export type Dringlichkeit = "niedrig" | "mittel" | "hoch" | "kritisch";
 
 export interface TicketWizardPayload {
+  idempotency_key?: string;
   object_id?: string;
   plz: string;
   ort: string;

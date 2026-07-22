@@ -2,6 +2,11 @@
 import { serviceClient } from "../_shared/client.ts";
 import { bucketForStatus } from "../_shared/status.ts";
 import { BUSINESS_RULES, isWithinOpeningWindow } from "../_shared/business-rules.ts";
+import {
+  normalizeIdempotencyKey,
+  ticketPayloadHash,
+  validateTicketAttachments,
+} from "../_shared/ticket-creation-integrity.ts";
 
 interface AttachmentInput {
   name: string;
@@ -12,8 +17,103 @@ interface AttachmentInput {
 
 const BOOKING_MIN_DATE = "2026-04-01";
 const MAX_ATTACHMENTS = 5;
-const MAX_ATTACHMENT_SIZE_BYTES = 10 * 1024 * 1024;
-const ALLOWED_ATTACHMENT_TYPES = new Set(["image/jpeg", "image/jpg", "image/png", "application/pdf"]);
+
+type IdempotencyClaim =
+  | { kind: "claimed"; processingToken: string }
+  | { kind: "completed"; ticketId: string; ticketNumber: string }
+  | { kind: "conflict" }
+  | { kind: "pending" };
+
+function delay(milliseconds: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, milliseconds));
+}
+
+async function claimTicketCreation(
+  supabase: ReturnType<typeof serviceClient>,
+  idempotencyKey: string,
+  payloadHash: string,
+): Promise<IdempotencyClaim> {
+  const processingToken = crypto.randomUUID();
+  const { error: insertError } = await supabase.from("ticket_creation_requests").insert({
+    idempotency_key: idempotencyKey,
+    payload_hash: payloadHash,
+    status: "pending",
+    processing_token: processingToken,
+  });
+  if (!insertError) return { kind: "claimed", processingToken };
+  if (!isUniqueViolation(insertError)) throw new Error("Ticketvorgang konnte nicht reserviert werden.");
+
+  for (let attempt = 0; attempt < 30; attempt += 1) {
+    const { data, error } = await supabase
+      .from("ticket_creation_requests")
+      .select("payload_hash,status,ticket_id,ticket_number,processing_token,updated_at")
+      .eq("idempotency_key", idempotencyKey)
+      .maybeSingle();
+    if (error || !data) throw new Error("Ticketvorgang konnte nicht geprüft werden.");
+
+    const row = data as Record<string, unknown>;
+    if (String(row.payload_hash || "") !== payloadHash) return { kind: "conflict" };
+    if (row.status === "completed") {
+      return {
+        kind: "completed",
+        ticketId: String(row.ticket_id || ""),
+        ticketNumber: String(row.ticket_number || ""),
+      };
+    }
+
+    const updatedAt = Date.parse(String(row.updated_at || ""));
+    const canTakeOver = row.status === "failed" || (Number.isFinite(updatedAt) && updatedAt < Date.now() - 5 * 60_000);
+    if (canTakeOver) {
+      const nextToken = crypto.randomUUID();
+      const { data: claimed, error: claimError } = await supabase
+        .from("ticket_creation_requests")
+        .update({ status: "pending", processing_token: nextToken, error_code: null, updated_at: new Date().toISOString() })
+        .eq("idempotency_key", idempotencyKey)
+        .eq("processing_token", String(row.processing_token || ""))
+        .select("idempotency_key")
+        .maybeSingle();
+      if (claimError) throw new Error("Ticketvorgang konnte nicht erneut reserviert werden.");
+      if (claimed) return { kind: "claimed", processingToken: nextToken };
+    }
+
+    await delay(100);
+  }
+  return { kind: "pending" };
+}
+
+async function finishTicketCreation(
+  supabase: ReturnType<typeof serviceClient>,
+  idempotencyKey: string,
+  processingToken: string,
+  ticket: { id: string; ticket_nummer: string },
+): Promise<void> {
+  const { data, error } = await supabase
+    .from("ticket_creation_requests")
+    .update({
+      status: "completed",
+      ticket_id: ticket.id,
+      ticket_number: ticket.ticket_nummer,
+      error_code: null,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("idempotency_key", idempotencyKey)
+    .eq("processing_token", processingToken)
+    .select("idempotency_key")
+    .maybeSingle();
+  if (error || !data) throw new Error("Ticketvorgang konnte nicht abgeschlossen werden.");
+}
+
+async function failTicketCreation(
+  supabase: ReturnType<typeof serviceClient>,
+  idempotencyKey: string,
+  processingToken: string,
+): Promise<void> {
+  await supabase
+    .from("ticket_creation_requests")
+    .update({ status: "failed", error_code: "creation_failed", updated_at: new Date().toISOString() })
+    .eq("idempotency_key", idempotencyKey)
+    .eq("processing_token", processingToken);
+}
 
 function sanitizeDescription(raw: unknown): string {
   return String(raw || "")
@@ -315,7 +415,7 @@ async function loadBookingsForDate(
     for (let attempt = 0; attempt < 20; attempt += 1) {
       const { data, error } = await supabase.from("tickets").select(cols.join(",")).eq(column, dateValue).limit(500);
       if (!error) {
-        const rows = (data || []) as Record<string, unknown>[];
+        const rows = (data || []) as unknown as Record<string, unknown>[];
         for (const row of rows) {
           if (!isActiveBookingStatus(row.status)) continue;
           const key = String(row.id || `${resolveTicketDate(row)}-${row.zeitfenster_von || ""}-${row.zeitfenster_bis || ""}`);
@@ -344,7 +444,7 @@ async function loadBookingsForDate(
       .lt("scheduled_at", toIso)
       .limit(500);
     if (!error) {
-      const rows = (data || []) as Record<string, unknown>[];
+      const rows = (data || []) as unknown as Record<string, unknown>[];
       for (const row of rows) {
         if (!isActiveBookingStatus(row.status)) continue;
         const key = String(row.id || `${resolveTicketDate(row)}-${row.zeitfenster_von || ""}-${row.zeitfenster_bis || ""}`);
@@ -435,28 +535,6 @@ function normalizeTicketSource(value: unknown, authUserId: string | null): strin
   return "öffentlicher Website-Kontakt";
 }
 
-function validateAttachments(input: AttachmentInput[]): string | null {
-  if (input.length > MAX_ATTACHMENTS) {
-    return `Maximal ${MAX_ATTACHMENTS} Anhänge pro Ticket sind erlaubt.`;
-  }
-
-  for (const attachment of input) {
-    const name = String(attachment.name || "Datei").trim() || "Datei";
-    const type = String(attachment.type || "").trim().toLowerCase();
-    const size = Number(attachment.size || 0);
-    const extension = name.split(".").pop()?.toLowerCase() || "";
-    const allowedByExtension = ["jpg", "jpeg", "png", "pdf"].includes(extension);
-    if (!ALLOWED_ATTACHMENT_TYPES.has(type) && !allowedByExtension) {
-      return `${name}: Dateityp nicht erlaubt.`;
-    }
-    if (!Number.isFinite(size) || size <= 0 || size > MAX_ATTACHMENT_SIZE_BYTES) {
-      return `${name}: Datei ist größer als 10 MB oder ungültig.`;
-    }
-  }
-
-  return null;
-}
-
 function normalizePhone(value: unknown): string | null {
   const phone = String(value || "").replace(/[^\d+]/g, "").trim();
   if (phone.length < 6 || phone.length > 20) return null;
@@ -543,10 +621,12 @@ function isPriorityConstraintError(message: string): boolean {
   );
 }
 
+type EntityResolution = { id: string | null; created: boolean };
+
 async function findOrCreateCustomerAdaptive(
   supabase: ReturnType<typeof serviceClient>,
   input: Record<string, unknown>
-): Promise<string | null> {
+): Promise<EntityResolution> {
   const email = normalizeEmail(input.kunde_email);
   const phone = normalizePhone(input.kunde_telefon);
   const customerType = normalizeCustomerType(input.customer_type);
@@ -566,7 +646,7 @@ async function findOrCreateCustomerAdaptive(
   });
   const contactPerson = sanitizeCustomerText(input.ansprechpartner) || rawName || company || "Kontakt";
 
-  if (!email && !phone) return null;
+  if (!email && !phone) return { id: null, created: false };
   if (customerType === "firma" && !company) {
     throw new Error("Bei Kundentyp Firma ist ein Firmenname erforderlich.");
   }
@@ -627,10 +707,10 @@ async function findOrCreateCustomerAdaptive(
   };
 
   const existingByEmail = await findByEmail();
-  if (existingByEmail) return existingByEmail;
+  if (existingByEmail) return { id: existingByEmail, created: false };
 
   const existingByPhone = await findByPhone();
-  if (existingByPhone) return existingByPhone;
+  if (existingByPhone) return { id: existingByPhone, created: false };
 
   const customerTypeCandidates = customerTypeWriteCandidates(customerType);
   let customerTypeIndex = 0;
@@ -656,16 +736,16 @@ async function findOrCreateCustomerAdaptive(
     const { data, error } = await supabase.from("customers").insert(body).select("id").limit(1);
     if (!error && Array.isArray(data) && data.length > 0) {
       const id = String((data[0] as Record<string, unknown>).id || "").trim();
-      if (id) return id;
-      return await findByEmail() || (await findByPhone());
+      if (id) return { id, created: true };
+      return { id: await findByEmail() || (await findByPhone()), created: false };
     }
-    if (!error) return await findByEmail() || (await findByPhone());
+    if (!error) return { id: await findByEmail() || (await findByPhone()), created: false };
 
-    if (isMissingTable(error.message || "", "customers")) return null;
+    if (isMissingTable(error.message || "", "customers")) return { id: null, created: false };
 
     if (isUniqueViolation(error)) {
       const existing = (await findByEmail()) || (await findByPhone());
-      if (existing) return existing;
+      if (existing) return { id: existing, created: false };
     }
 
     if (isCustomerTypeConstraintError(error.message || "") && customerTypeIndex < customerTypeCandidates.length - 1) {
@@ -679,13 +759,13 @@ async function findOrCreateCustomerAdaptive(
         delete body[missing];
         continue;
       }
-      return null;
+      return { id: null, created: false };
     }
 
     throw new Error(error.message);
   }
 
-  return await findByEmail() || (await findByPhone());
+  return { id: await findByEmail() || (await findByPhone()), created: false };
 }
 
 async function linkCustomerToAuthUserIfPossible(
@@ -693,12 +773,20 @@ async function linkCustomerToAuthUserIfPossible(
   customerId: string,
   authUserId: string,
   authEmail: string
-): Promise<void> {
-  if (!customerId || !authUserId) return;
+): Promise<boolean> {
+  if (!customerId || !authUserId) return false;
   const normalizedEmail = normalizeEmail(authEmail);
   const payload: Record<string, unknown> = { auth_user_id: authUserId };
   if (normalizedEmail) payload.email = normalizedEmail;
-  await supabase.from("customers").update(payload).eq("id", customerId).is("auth_user_id", null);
+  const { data, error } = await supabase
+    .from("customers")
+    .update(payload)
+    .eq("id", customerId)
+    .is("auth_user_id", null)
+    .select("id")
+    .maybeSingle();
+  if (error) throw new Error("Kundenkonto konnte nicht verknüpft werden.");
+  return Boolean(data);
 }
 
 async function insertTicketAdaptive(
@@ -737,7 +825,7 @@ async function insertTicketAdaptive(
     const selectCols = [...new Set(returningColumns)].join(",") || "id";
     const { data, error } = await supabase.from("tickets").insert(body).select(selectCols).limit(1);
     if (!error && Array.isArray(data) && data.length > 0) {
-      const row = data[0] as Record<string, unknown>;
+      const row = data[0] as unknown as Record<string, unknown>;
       const id = String(row.id || row.ticket_id || "").trim();
       const ticketNummer = String(
         row.ticket_nummer || row.ticket_number || row.ticket_nr || row.nummer || body.ticket_nummer || payload.ticket_nummer || ""
@@ -800,39 +888,45 @@ async function resolveOrCreateObjectId(
     zip: string;
     city: string;
   }
-): Promise<string | null> {
+): Promise<EntityResolution> {
   const requesterUserId = String(input.requesterUserId || "").trim();
-  if (!requesterUserId) return null;
+  if (!requesterUserId) return { id: null, created: false };
 
   const explicitObjectId = String(input.explicitObjectId || "").trim();
   if (explicitObjectId) {
     const { data, error } = await supabase
       .from("objects")
-      .select("id,requester_user_id")
+      .select("id,requester_user_id,customer_id,is_active")
       .eq("id", explicitObjectId)
       .limit(1);
     if (!error && Array.isArray(data) && data.length > 0) {
       const row = data[0] as Record<string, unknown>;
-      if (String(row.requester_user_id || "").trim() === requesterUserId) return explicitObjectId;
+      if (
+        row.is_active === true &&
+        String(row.requester_user_id || "").trim() === requesterUserId &&
+        String(row.customer_id || "").trim() === String(input.customerId || "").trim()
+      ) return { id: explicitObjectId, created: false };
     }
+    throw new Error("Das ausgewählte Objekt gehört nicht zum Kundenkonto oder ist deaktiviert.");
   }
 
   const street = String(input.street || "").trim();
   const zip = String(input.zip || "").trim();
   const city = String(input.city || "").trim();
-  if (!street || !zip || !city) return null;
+  if (!street || !zip || !city) return { id: null, created: false };
 
   const { data: found, error: findError } = await supabase
     .from("objects")
     .select("id")
     .eq("requester_user_id", requesterUserId)
+    .eq("customer_id", input.customerId)
     .eq("street", street)
     .eq("zip", zip)
     .eq("city", city)
     .eq("is_active", true)
     .limit(1);
   if (!findError && Array.isArray(found) && found.length > 0) {
-    return String((found[0] as Record<string, unknown>).id || "").trim() || null;
+    return { id: String((found[0] as Record<string, unknown>).id || "").trim() || null, created: false };
   }
 
   const { data: inserted, error: insertError } = await supabase
@@ -849,8 +943,42 @@ async function resolveOrCreateObjectId(
     })
     .select("id")
     .single();
-  if (insertError) return null;
-  return String(inserted?.id || "").trim() || null;
+  if (insertError) throw new Error("Kundenobjekt konnte nicht angelegt werden.");
+  return { id: String(inserted?.id || "").trim() || null, created: true };
+}
+
+async function rollbackTicketCreation(
+  supabase: ReturnType<typeof serviceClient>,
+  input: {
+    ticketId: string | null;
+    objectId: string | null;
+    customerId: string | null;
+    linkedCustomerId: string | null;
+    authUserId: string | null;
+  },
+): Promise<void> {
+  const failures: string[] = [];
+  if (input.ticketId) {
+    const { error } = await supabase.from("tickets").delete().eq("id", input.ticketId);
+    if (error) failures.push("ticket");
+  }
+  if (input.objectId) {
+    const { error } = await supabase.from("objects").delete().eq("id", input.objectId);
+    if (error) failures.push("object");
+  }
+  if (input.linkedCustomerId && input.authUserId) {
+    const { error } = await supabase
+      .from("customers")
+      .update({ auth_user_id: null })
+      .eq("id", input.linkedCustomerId)
+      .eq("auth_user_id", input.authUserId);
+    if (error) failures.push("customer_link");
+  }
+  if (input.customerId) {
+    const { error } = await supabase.from("customers").delete().eq("id", input.customerId);
+    if (error) failures.push("customer");
+  }
+  if (failures.length) throw new Error(`Rollback fehlgeschlagen: ${failures.join(", ")}.`);
 }
 
 Deno.serve(async (req) => {
@@ -880,6 +1008,12 @@ Deno.serve(async (req) => {
     if (!/^\d{5}$/.test(plz)) return json({ error: "Ungültige PLZ." }, 400);
     if (!datenschutz || !agb || !haftung) return json({ error: "Rechtliche Zustimmungen fehlen." }, 400);
 
+    const attachments = Array.isArray(body.attachments) ? (body.attachments as AttachmentInput[]) : [];
+    const attachmentError = validateTicketAttachments(attachments);
+    if (attachmentError) return json({ error: attachmentError }, 400);
+    const idempotencyKey = normalizeIdempotencyKey(body.idempotency_key);
+    if (!idempotencyKey) return json({ error: "Gültiger Idempotency-Key fehlt." }, 400);
+
     const supabase = serviceClient();
     let authUserId: string | null = null;
     let authenticatedEmail = "";
@@ -893,6 +1027,21 @@ Deno.serve(async (req) => {
         }
       }
     }
+
+    const payloadHash = await ticketPayloadHash({ ...body, authenticated_user_id: authUserId });
+    const claim = await claimTicketCreation(supabase, idempotencyKey, payloadHash);
+    if (claim.kind === "conflict") return json({ error: "Idempotency-Key wurde mit anderen Daten verwendet." }, 409);
+    if (claim.kind === "pending") return json({ error: "Ticketvorgang wird bereits verarbeitet." }, 409);
+    if (claim.kind === "completed") {
+      return json({ ticket_id: claim.ticketId, ticket_nummer: claim.ticketNumber, idempotent_replay: true });
+    }
+
+    let createdTicketId: string | null = null;
+    let createdObjectId: string | null = null;
+    let createdCustomerId: string | null = null;
+    let linkedCustomerId: string | null = null;
+
+    try {
 
     const { data: nummer, error: nummerErr } = await supabase.rpc("next_ticket_number");
     if (nummerErr || !nummer) return json({ error: "Ticketnummer konnte nicht erzeugt werden." }, 500);
@@ -1061,14 +1210,18 @@ Deno.serve(async (req) => {
       return json({ error: "Mindestens E-Mail oder Telefon ist erforderlich." }, 400);
     }
 
-    const customerId = await findOrCreateCustomerAdaptive(supabase, payload);
+    const customerResolution = await findOrCreateCustomerAdaptive(supabase, payload);
+    const customerId = customerResolution.id;
+    if (!customerId) throw new Error("Kunde konnte nicht eindeutig angelegt oder zugeordnet werden.");
+    if (customerResolution.created) createdCustomerId = customerId;
     if (customerId) {
       payload.customer_id = customerId;
       if (authUserId) {
-        await linkCustomerToAuthUserIfPossible(supabase, customerId, authUserId, authenticatedEmail);
+        const linked = await linkCustomerToAuthUserIfPossible(supabase, customerId, authUserId, authenticatedEmail);
+        if (linked && !customerResolution.created) linkedCustomerId = customerId;
       }
     }
-    const objectId = await resolveOrCreateObjectId(supabase, {
+    const objectResolution = await resolveOrCreateObjectId(supabase, {
       requesterUserId: authUserId,
       customerId,
       explicitObjectId: String(body.object_id || "").trim() || null,
@@ -1076,13 +1229,13 @@ Deno.serve(async (req) => {
       zip: objektPlz,
       city: objektOrt || city,
     });
+    const objectId = objectResolution.id;
+    if (objectResolution.created) createdObjectId = objectId;
     if (objectId) payload.object_id = objectId;
 
     const ticket = await insertTicketAdaptive(supabase, payload);
+    createdTicketId = ticket.id;
 
-    const attachments = Array.isArray(body.attachments) ? (body.attachments as AttachmentInput[]) : [];
-    const attachmentError = validateAttachments(attachments);
-    if (attachmentError) return json({ error: attachmentError }, 400);
     if (attachments.length > 0) {
       const rows = attachments.slice(0, MAX_ATTACHMENTS).map((att) => ({
         ticket_id: ticket.id,
@@ -1091,18 +1244,20 @@ Deno.serve(async (req) => {
         size_bytes: Number(att.size || 0),
         base64_content: String(att.base64 || ""),
       }));
-      await supabase.from("ticket_attachments").insert(rows);
+      const { error } = await supabase.from("ticket_attachments").insert(rows);
+      if (error) throw new Error("Anhänge konnten nicht gespeichert werden.");
     }
 
-    await supabase.from("ticket_events").insert({
+    const { error: eventError } = await supabase.from("ticket_events").insert({
       ticket_id: ticket.id,
       event_typ: "inbox_created",
       detail: "Ticket über öffentlichen Wizard in Inbox erstellt",
       actor: "kunde",
       metadata: customerId ? { customer_id: customerId } : {},
     });
+    if (eventError) throw new Error("Ticketverlauf konnte nicht gespeichert werden.");
 
-    await supabase.from("analytics_events").insert({
+    const { error: analyticsError } = await supabase.from("analytics_events").insert({
       event_name: "wizard_submit",
       step: "submit",
       page_path: String(body.source_page || body.page_path || "/einzelauftrag"),
@@ -1114,8 +1269,25 @@ Deno.serve(async (req) => {
         source: ticketSource,
       },
     });
+    if (analyticsError) throw new Error("Ticketabschluss konnte nicht protokolliert werden.");
+
+    await finishTicketCreation(supabase, idempotencyKey, claim.processingToken, ticket);
 
     return json({ ticket_id: ticket.id, ticket_nummer: ticket.ticket_nummer });
+    } catch (creationError) {
+      try {
+        await rollbackTicketCreation(supabase, {
+          ticketId: createdTicketId,
+          objectId: createdObjectId,
+          customerId: createdCustomerId,
+          linkedCustomerId,
+          authUserId,
+        });
+      } finally {
+        await failTicketCreation(supabase, idempotencyKey, claim.processingToken);
+      }
+      throw creationError;
+    }
   } catch (err) {
     return json({ error: (err as Error).message || "Unbekannter Fehler" }, 500);
   }

@@ -1441,6 +1441,7 @@ export async function createTicket(
   });
   const cleanPayload: TicketWizardPayload = {
     ...payload,
+    idempotency_key: payload.idempotency_key || crypto.randomUUID(),
     request_type: requestType,
     anfrageart,
     customer_type: normalizedType,
@@ -1491,6 +1492,15 @@ export async function createTicket(
       throw (lastPriorityError as Error) || new Error("Ticket konnte nicht erstellt werden.");
     },
     async () => {
+      // Retrying the Edge endpoint is safe because every path reuses the same
+      // persistent idempotency key. Direct browser-side database inserts are
+      // intentionally no longer reachable for ticket creation.
+      if (cleanPayload.idempotency_key) {
+        return await postCreateTicket(
+          withPriorityCandidate(cleanPayload, priorityCandidates[0] || String(cleanPayload.dringlichkeit || "mittel"))
+        );
+      }
+
       try {
         let lastInvokeError: Error | null = null;
         for (let i = 0; i < Math.max(1, priorityCandidates.length); i += 1) {
@@ -1581,7 +1591,7 @@ export async function createTicket(
         status: "Neu",
         anfrageart: requestTypeLabel,
         request_type: requestType,
-        source: session.user?.id ? "Kundenkonto" : "öffentlicher Website-Kontakt",
+        source: session?.user?.id ? "Kundenkonto" : "öffentlicher Website-Kontakt",
         subkategorie: payload.subkategorie || null,
         subcategory: payload.subkategorie || null,
         customer_type: customerType,
