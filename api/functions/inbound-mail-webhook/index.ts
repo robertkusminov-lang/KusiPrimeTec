@@ -1,7 +1,8 @@
 import { json, options } from "../_shared/cors.ts";
 import { serviceClient } from "../_shared/client.ts";
+import { handleInboundMailWebhook } from "../_shared/inbound-mail-webhook-handler.ts";
 
-Deno.serve(async (req) => {
+async function processEnabledRequest(req: Request): Promise<Response> {
   if (req.method === "OPTIONS") return options();
   if (req.method !== "POST") return json({ error: "Method not allowed" }, 405);
 
@@ -45,6 +46,14 @@ Deno.serve(async (req) => {
   } catch (err) {
     return json({ error: (err as Error).message || "Webhook Fehler" }, 500);
   }
-});
+}
+
+Deno.serve((req) =>
+  handleInboundMailWebhook(
+    req,
+    Deno.env.get("INBOUND_MAIL_WEBHOOK_ENABLED"),
+    processEnabledRequest,
+  )
+);
 
 

@@ -1,6 +1,7 @@
 import { json, options } from "../_shared/cors.ts";
 import { requireAdmin } from "../_shared/auth.ts";
 import { serviceClient } from "../_shared/client.ts";
+import { isTicketObjectConsistent } from "../_shared/customer-object-access.ts";
 
 function asText(value: unknown, max = 180): string {
   return String(value || "")
@@ -80,10 +81,34 @@ Deno.serve(async (req) => {
 
       const { data: obj, error: objErr } = await supabase
         .from("objects")
-        .select("id,name,street,zip,city")
+        .select("id,name,street,zip,city,customer_id,requester_user_id,is_active")
         .eq("id", objectId)
         .maybeSingle();
       if (objErr || !obj) return json({ error: objErr?.message || "Objekt nicht gefunden." }, 404);
+
+      const { data: ticket, error: ticketErr } = await supabase
+        .from("tickets")
+        .select("id,customer_id,requester_user_id")
+        .eq("id", ticketId)
+        .maybeSingle();
+      if (ticketErr || !ticket) return json({ error: ticketErr?.message || "Ticket nicht gefunden." }, 404);
+      const customerId = asText((ticket as Record<string, unknown>).customer_id, 80);
+      if (!customerId) return json({ error: "Ticket besitzt keine eindeutige Kundenzuordnung." }, 409);
+      const { data: customer, error: customerErr } = await supabase
+        .from("customers")
+        .select("id,auth_user_id")
+        .eq("id", customerId)
+        .maybeSingle();
+      if (customerErr || !customer) return json({ error: customerErr?.message || "Ticketkunde nicht gefunden." }, 409);
+
+      const customerAuthUserId = asText((customer as Record<string, unknown>).auth_user_id, 80);
+      const objectRequesterUserId = asText((obj as Record<string, unknown>).requester_user_id, 80);
+      if (
+        !isTicketObjectConsistent(ticket, obj) ||
+        (customerAuthUserId ? objectRequesterUserId !== customerAuthUserId : Boolean(objectRequesterUserId))
+      ) {
+        return json({ error: "Ticket und Objekt gehören nicht zum selben aktiven Kundenkonto." }, 409);
+      }
 
       const street = asText((obj as Record<string, unknown>).street, 160) || null;
       const zip = asText((obj as Record<string, unknown>).zip, 20) || null;
