@@ -26,24 +26,34 @@ export function DataTable<T>({ columns, rows, rowKey, onRowClick }: Props<T>) {
           <article
             key={rowKey(row)}
             className={clsx(
-              "rounded-xl2 border border-[var(--line)] bg-slate-950/35 p-3 shadow-[0_14px_26px_rgba(2,8,20,0.24)]",
-              onRowClick ? "cursor-pointer transition-all duration-180 active:scale-[0.995]" : ""
+              "admin-mobile-card rounded-xl2 border border-[var(--line)] bg-slate-950/35 p-3 shadow-[0_14px_26px_rgba(2,8,20,0.24)]",
+              onRowClick
+                ? "cursor-pointer transition-all duration-180 active:scale-[0.995] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-electric-300/70"
+                : ""
             )}
+            role={onRowClick ? "button" : undefined}
+            tabIndex={onRowClick ? 0 : undefined}
             onClick={() => onRowClick?.(row)}
+            onKeyDown={(event) => {
+              if (!onRowClick || (event.key !== "Enter" && event.key !== " ")) return;
+              event.preventDefault();
+              onRowClick(row);
+            }}
           >
-            <div className="grid gap-3">
-              {columns.map((col) => (
+            <div className="grid gap-2.5">
+              {columns.map((col, columnIndex) => (
                 <section
                   key={col.key}
                   className={clsx(
-                    "min-w-0 rounded-xl border border-[var(--line)]/70 bg-slate-900/30 p-3",
+                    "admin-mobile-field min-w-0 rounded-xl border border-[var(--line)]/70 bg-slate-900/30 p-3",
+                    columnIndex === 0 && "admin-mobile-field-primary",
                     isActionColumn(col.key) && "border-[var(--line-strong)]/70 bg-slate-900/55"
                   )}
                 >
-                  <p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--text-soft)]">
+                  <p className="admin-mobile-field-label mb-2 font-semibold uppercase text-[var(--text-soft)]">
                     {col.title}
                   </p>
-                  <div className="min-w-0">{col.render(row)}</div>
+                  <div className="admin-mobile-field-value min-w-0">{col.render(row)}</div>
                 </section>
               ))}
             </div>

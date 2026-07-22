@@ -638,7 +638,7 @@ export default function AdminTicketDetailPage() {
         <GlassCard className="p-4">
           <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
             <h2 className="font-semibold text-white">Ticketdaten</h2>
-            <div className="flex items-center gap-2">
+            <div className="admin-ticket-heading-actions flex items-center gap-2">
               {dataEditing ? (
                 <>
                   <Button

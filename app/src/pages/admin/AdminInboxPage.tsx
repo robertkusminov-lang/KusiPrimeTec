@@ -245,7 +245,7 @@ export default function AdminInboxPage() {
 
       {toast ? <Toast kind={toast.kind} text={toast.text} /> : null}
 
-      <div className="flex flex-wrap gap-2">
+      <div className="admin-filter-bar flex flex-wrap gap-2">
         <input
           placeholder="Suche Ticket, Name, Ort, Telefon, E-Mail"
           className="premium-input w-full px-3 py-2 text-sm sm:w-[23rem]"

@@ -706,7 +706,7 @@ export default function AdminCustomersPage() {
         </div>
       </div>
 
-      <div className="flex flex-wrap gap-2">
+      <div className="admin-filter-bar flex flex-wrap gap-2">
         <input
           className="premium-input min-w-0 w-full flex-1 px-3 py-2 text-sm sm:min-w-[16rem]"
           placeholder="Suche Name, Firma, E-Mail, Telefon, Ticket"

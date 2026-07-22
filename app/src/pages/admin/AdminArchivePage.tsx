@@ -107,7 +107,7 @@ export default function AdminArchivePage() {
       <SectionTitle title="Archiv" subtitle={"Abgeschlossene und stornierte Tickets mit schneller \u00dcbersicht"} />
       {toast ? <Toast kind={toast.kind} text={toast.text} /> : null}
 
-      <div className="flex flex-wrap gap-2">
+      <div className="admin-filter-bar flex flex-wrap gap-2">
         <input
           placeholder="Suche Ticket, Kunde, E-Mail"
           className="premium-input w-full px-3 py-2 text-sm sm:w-72"
