@@ -24,7 +24,9 @@ export async function encryptText(text: string, secret: string): Promise<{ iv: s
 
 export async function decryptText(cipher: string, iv: string, secret: string): Promise<string> {
   const key = await deriveKey(secret);
-  const decrypted = await crypto.subtle.decrypt({ name: "AES-GCM", iv: fromB64(iv) }, key, fromB64(cipher));
+  const ivBytes = fromB64(iv) as unknown as BufferSource;
+  const cipherBytes = fromB64(cipher) as unknown as BufferSource;
+  const decrypted = await crypto.subtle.decrypt({ name: "AES-GCM", iv: ivBytes }, key, cipherBytes);
   return new TextDecoder().decode(decrypted);
 }
 

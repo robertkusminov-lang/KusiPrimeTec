@@ -35,7 +35,7 @@ async function isAdminByTable(
       const rows = Array.isArray(data) ? data : [];
       if (!rows.length) return false;
       if (!withIsActive) return true;
-      return rows.some((row) => (row as Record<string, unknown>).is_active !== false);
+      return rows.some((row) => (row as unknown as Record<string, unknown>).is_active !== false);
     }
 
     const message = String(error.message || "");
