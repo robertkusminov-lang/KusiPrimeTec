@@ -1,6 +1,7 @@
 import { json, options } from "../_shared/cors.ts";
 import { requireCustomer } from "../_shared/auth.ts";
 import { serviceClient } from "../_shared/client.ts";
+import { canCustomerAccessTicket } from "../_shared/customer-object-access.ts";
 
 type DbRow = Record<string, unknown>;
 
@@ -370,11 +371,18 @@ async function loadCustomerByUserId(supabase: ReturnType<typeof serviceClient>, 
   return Array.isArray(data) ? ((data[0] as DbRow) || null) : null;
 }
 
-async function loadObjectsByUserId(supabase: ReturnType<typeof serviceClient>, userId: string): Promise<DbRow[]> {
+async function loadObjectsByUserId(
+  supabase: ReturnType<typeof serviceClient>,
+  userId: string,
+  customerId: string | null,
+): Promise<DbRow[]> {
+  if (!customerId) return [];
   const { data, error } = await supabase
     .from("objects")
     .select("*")
     .eq("requester_user_id", userId)
+    .eq("customer_id", customerId)
+    .eq("is_active", true)
     .order("updated_at", { ascending: false });
   if (error) {
     if (isMissingTable(error.message || "", "objects")) return [];
@@ -402,24 +410,16 @@ async function loadTicketsByField(
 async function loadAccessibleTickets(
   supabase: ReturnType<typeof serviceClient>,
   userId: string,
-  customerId: string | null,
-  objectIds: string[],
+  customerId: string,
+  objectsById: Map<string, DbRow>,
 ): Promise<DbRow[]> {
-  const [byRequester, byCustomer, byObject] = await Promise.all([
-    loadTicketsByField(supabase, "requester_user_id", userId),
-    customerId ? loadTicketsByField(supabase, "customer_id", customerId) : Promise.resolve([] as DbRow[]),
-    objectIds.length ? loadTicketsByField(supabase, "object_id", objectIds) : Promise.resolve([] as DbRow[]),
-  ]);
-
-  const seen = new Set<string>();
-  const merged: DbRow[] = [];
-  for (const row of [...byRequester, ...byCustomer, ...byObject]) {
-    const id = pickString(row, ["id"], "");
-    if (!id || seen.has(id)) continue;
-    seen.add(id);
-    merged.push(row);
-  }
-  return merged;
+  const objectIds = [...objectsById.keys()].filter(Boolean);
+  if (!objectIds.length) return [];
+  const rows = await loadTicketsByField(supabase, "object_id", objectIds);
+  return rows.filter((ticket) => {
+    const object = objectsById.get(pickString(ticket, ["object_id"], ""));
+    return canCustomerAccessTicket(ticket, object, customerId, userId);
+  });
 }
 
 async function loadTicketDocuments(supabase: ReturnType<typeof serviceClient>, ticketIds: string[]): Promise<DbRow[]> {
@@ -674,14 +674,11 @@ Deno.serve(async (req) => {
     const supabase = serviceClient();
     const customer = await loadCustomerByUserId(supabase, userId);
     const customerId = pickNullableString(customer || {}, ["id"]);
-    const objects = await loadObjectsByUserId(supabase, userId);
+    const objects = await loadObjectsByUserId(supabase, userId, customerId);
     const objectsById = new Map(objects.map((row) => [pickString(row, ["id"], ""), row]));
-    const tickets = await loadAccessibleTickets(
-      supabase,
-      userId,
-      customerId,
-      objects.map((row) => pickString(row, ["id"], "")).filter(Boolean),
-    );
+    const tickets = customerId
+      ? await loadAccessibleTickets(supabase, userId, customerId, objectsById)
+      : [];
     const ticketsById = new Map(tickets.map((row) => [pickString(row, ["id"], ""), row]));
     const ticketIds = tickets.map((row) => pickString(row, ["id"], "")).filter(Boolean);
     const [ticketDocuments, sourceReports] = await Promise.all([

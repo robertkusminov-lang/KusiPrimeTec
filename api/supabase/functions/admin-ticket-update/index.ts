@@ -645,24 +645,28 @@ Deno.serve(async (req) => {
       nextBucketForValidation === "active";
 
     if (shouldAssignObjectOnAcceptance) {
-      const objectPatch = await ensureTicketObjectAssignment(supabase, {
-        objectId: current.object_id,
-        customerId: update.customer_id ?? current.customer_id,
-        customerDisplayName:
-          update.customer_display_name ??
-          current.customer_display_name ??
-          update.invoice_recipient_name ??
-          current.invoice_recipient_name ??
-          update.kunde_firma ??
-          current.kunde_firma ??
-          update.kunde_name ??
-          current.kunde_name,
-        objectAddress: update.objekt_adresse ?? current.objekt_adresse ?? current.object_address,
-        objectStreet: update.objekt_strasse ?? current.objekt_strasse,
-        objectZip: update.objekt_plz ?? current.objekt_plz ?? current.plz,
-        objectCity: update.objekt_ort ?? current.objekt_ort ?? current.city ?? current.ort,
-      });
-      if (objectPatch) Object.assign(update, objectPatch);
+      try {
+        const objectPatch = await ensureTicketObjectAssignment(supabase, {
+          objectId: current.object_id,
+          customerId: update.customer_id ?? current.customer_id,
+          customerDisplayName:
+            update.customer_display_name ??
+            current.customer_display_name ??
+            update.invoice_recipient_name ??
+            current.invoice_recipient_name ??
+            update.kunde_firma ??
+            current.kunde_firma ??
+            update.kunde_name ??
+            current.kunde_name,
+          objectAddress: update.objekt_adresse ?? current.objekt_adresse ?? current.object_address,
+          objectStreet: update.objekt_strasse ?? current.objekt_strasse,
+          objectZip: update.objekt_plz ?? current.objekt_plz ?? current.plz,
+          objectCity: update.objekt_ort ?? current.objekt_ort ?? current.city ?? current.ort,
+        });
+        Object.assign(update, objectPatch);
+      } catch (err) {
+        return json({ error: String((err as Error).message || "Objektzuordnung fehlgeschlagen.") }, 409);
+      }
     }
 
     if (Object.keys(update).length === 0) return json({ error: "Keine Aenderungen uebergeben." }, 400);

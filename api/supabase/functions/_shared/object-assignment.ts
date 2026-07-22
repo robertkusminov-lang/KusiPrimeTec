@@ -1,4 +1,8 @@
 import { serviceClient } from "./client.ts";
+import {
+  isObjectAssignableToCustomer,
+  selectUniqueCustomerObject,
+} from "./customer-object-access.ts";
 
 function asText(value: unknown, max = 220): string {
   return String(value || "")
@@ -37,13 +41,9 @@ async function loadRequesterUserId(
   customerId: string | null
 ): Promise<string | null> {
   if (!customerId) return null;
-  try {
-    const { data, error } = await supabase.from("customers").select("auth_user_id").eq("id", customerId).maybeSingle();
-    if (error) return null;
-    return asText((data as Record<string, unknown> | null)?.auth_user_id, 80) || null;
-  } catch {
-    return null;
-  }
+  const { data, error } = await supabase.from("customers").select("auth_user_id").eq("id", customerId).maybeSingle();
+  if (error) throw new Error("Kundenzuordnung konnte nicht geprüft werden.");
+  return asText((data as Record<string, unknown> | null)?.auth_user_id, 80) || null;
 }
 
 async function loadObjectById(
@@ -55,19 +55,27 @@ async function loadObjectById(
     .select("id,name,street,zip,city,customer_id,requester_user_id,is_active")
     .eq("id", objectId)
     .maybeSingle();
-  if (error) return null;
+  if (error) throw new Error("Objektzuordnung konnte nicht geprüft werden.");
   return (data as Record<string, unknown> | null) || null;
 }
 
 async function findMatchingObject(
   supabase: ReturnType<typeof serviceClient>,
-  input: { street: string | null; zip: string | null; city: string | null; customerId: string | null }
+  input: {
+    street: string | null;
+    zip: string | null;
+    city: string | null;
+    customerId: string;
+    requesterUserId: string | null;
+  }
 ): Promise<Record<string, unknown> | null> {
   if (!input.street && !input.zip && !input.city) return null;
 
   let query = supabase
     .from("objects")
     .select("id,name,street,zip,city,customer_id,requester_user_id,is_active")
+    .eq("customer_id", input.customerId)
+    .eq("is_active", true)
     .limit(20);
 
   if (input.street) query = query.eq("street", input.street);
@@ -75,15 +83,18 @@ async function findMatchingObject(
   if (input.city) query = query.eq("city", input.city);
 
   const { data, error } = await query;
-  if (error || !Array.isArray(data) || !data.length) return null;
+  if (error) throw new Error("Objektzuordnung konnte nicht gesucht werden.");
+  if (!Array.isArray(data) || !data.length) return null;
 
-  const exactCustomer = input.customerId
-    ? data.find((row) => asText((row as Record<string, unknown>).customer_id, 80) === input.customerId)
-    : null;
-  if (exactCustomer) return exactCustomer as Record<string, unknown>;
-
-  const active = data.find((row) => (row as Record<string, unknown>).is_active !== false);
-  return (active as Record<string, unknown> | undefined) || (data[0] as Record<string, unknown>);
+  const selected = selectUniqueCustomerObject(
+    data as Record<string, unknown>[],
+    input.customerId,
+    input.requesterUserId,
+  );
+  if (selected.ambiguous) {
+    throw new Error("Mehrere passende Kundenobjekte gefunden. Bitte Objekt eindeutig auswählen.");
+  }
+  return selected.object as Record<string, unknown> | null;
 }
 
 async function syncObjectCustomer(
@@ -98,7 +109,9 @@ async function syncObjectCustomer(
   const currentZip = asText(objectRow.zip, 20) || null;
   const currentCity = asText(objectRow.city, 120) || null;
 
-  if (!currentCustomerId && input.customerId) patch.customer_id = input.customerId;
+  if (currentCustomerId !== input.customerId) {
+    throw new Error("Objekt gehört zu einem anderen Kunden.");
+  }
   if (!currentRequesterUserId && input.requesterUserId) patch.requester_user_id = input.requesterUserId;
   if (!currentStreet && input.street) patch.street = input.street;
   if (!currentZip && input.zip) patch.zip = input.zip;
@@ -110,7 +123,7 @@ async function syncObjectCustomer(
   const objectId = asText(objectRow.id, 80);
   if (!objectId) return objectRow;
   const { data, error } = await supabase.from("objects").update(patch).eq("id", objectId).select("*").maybeSingle();
-  if (error || !data) return objectRow;
+  if (error || !data) throw new Error("Kundenobjekt konnte nicht aktualisiert werden.");
   return data as Record<string, unknown>;
 }
 
@@ -132,18 +145,27 @@ export async function ensureTicketObjectAssignment(
   const street = asText(input.objectStreet, 160) || parsedAddress.street;
   const zip = asText(input.objectZip, 20) || parsedAddress.zip;
   const city = asText(input.objectCity, 120) || parsedAddress.city;
+
+  if (!customerId) {
+    throw new Error("Ticket besitzt keine eindeutige Kundenzuordnung.");
+  }
   const requesterUserId = await loadRequesterUserId(supabase, customerId);
 
   let objectRow: Record<string, unknown> | null = null;
   if (currentObjectId) {
     objectRow = await loadObjectById(supabase, currentObjectId);
+    if (!objectRow || !isObjectAssignableToCustomer(objectRow, customerId, requesterUserId)) {
+      throw new Error("Vorhandene Objektzuordnung gehört nicht zum Ticketkunden oder ist deaktiviert.");
+    }
   }
   if (!objectRow) {
-    objectRow = await findMatchingObject(supabase, { street, zip, city, customerId });
+    objectRow = await findMatchingObject(supabase, { street, zip, city, customerId, requesterUserId });
   }
 
   if (!objectRow) {
-    if (!street && !zip && !city) return null;
+    if (!street && !zip && !city) {
+      throw new Error("Objekt kann ohne eindeutige Adressdaten nicht zugeordnet werden.");
+    }
     const payload: Record<string, unknown> = {
       name: buildObjectName({ customerDisplayName: input.customerDisplayName, street, city }),
       street: street || null,
@@ -154,7 +176,7 @@ export async function ensureTicketObjectAssignment(
       is_active: true,
     };
     const { data, error } = await supabase.from("objects").insert(payload).select("*").maybeSingle();
-    if (error || !data) return null;
+    if (error || !data) throw new Error("Kundenobjekt konnte nicht angelegt werden.");
     objectRow = data as Record<string, unknown>;
   } else {
     objectRow = await syncObjectCustomer(supabase, objectRow, { customerId, requesterUserId, street, zip, city });
