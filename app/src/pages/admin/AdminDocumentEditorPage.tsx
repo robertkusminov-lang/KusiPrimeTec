@@ -8,6 +8,7 @@ import { SignaturePad } from "@/components/ui/SignaturePad";
 import { Toast } from "@/components/ui/Toast";
 import { BUSINESS_RULES, COMPANY_PROFILE } from "@/config/businessRules";
 import { loadTicketDocument, saveTicketDocument, sendTicketDocumentEmail } from "@/features/apiClient";
+import { hasNewerLocalSnapshot } from "@/features/documents/autosaveIntegrity";
 import { toUserMessage } from "@/lib/errors";
 import { dateTime } from "@/lib/format";
 import { readLocalDraft, removeLocalDraft, writeLocalDraft } from "@/lib/localDraft";
@@ -277,6 +278,7 @@ export function AdminDocumentEditorPage() {
   const [baseSnapshot, setBaseSnapshot] = React.useState("");
   const [baseUpdatedAt, setBaseUpdatedAt] = React.useState("");
   const saveLockRef = React.useRef(false);
+  const latestSnapshotSignatureRef = React.useRef("");
   const photoGalleryInputRef = React.useRef<HTMLInputElement | null>(null);
   const photoCameraInputRef = React.useRef<HTMLInputElement | null>(null);
 
@@ -449,6 +451,7 @@ export function AdminDocumentEditorPage() {
     () => (currentSnapshot ? serializeEditorSnapshot(currentSnapshot) : ""),
     [currentSnapshot]
   );
+  latestSnapshotSignatureRef.current = currentSnapshotSignature;
   const isDirty = Boolean(currentSnapshot && currentSnapshotSignature !== baseSnapshot);
 
   function patchPosition(index: number, patch: Partial<DocumentPosition>) {
@@ -658,6 +661,9 @@ export function AdminDocumentEditorPage() {
       try {
         const effectiveStatus = options?.nextStatus || status;
         const payloadData = preparedDocument.payloadData;
+        const requestSnapshotSignature = currentSnapshotSignature;
+        const requestMailTo = mailTo;
+        const requestStatus = status;
         const previousNumber = String(doc.dokument_nummer || "").trim();
         let nextMailSubject = mailSubject;
         let nextMailMessage = mailMessage;
@@ -668,33 +674,39 @@ export function AdminDocumentEditorPage() {
             nextMailSubject = mailSubject.replace(previousNumber, nextNumber);
             nextMailMessage = mailMessage.replace(previousNumber, nextNumber);
           }
-          setMailSubject(nextMailSubject);
-          setMailMessage(nextMailMessage);
+          setMailSubject((current) => (current === mailSubject ? nextMailSubject : current));
+          setMailMessage((current) => (current === mailMessage ? nextMailMessage : current));
         }
 
         const now = new Date().toISOString();
+        const hasNewerChanges = hasNewerLocalSnapshot(requestSnapshotSignature, latestSnapshotSignatureRef.current);
         setDoc((prev) =>
           prev
             ? {
                 ...prev,
                 dokument_nummer: nextNumber || prev.dokument_nummer,
-                status: effectiveStatus,
-                data: payloadData,
+                status: hasNewerChanges ? prev.status : effectiveStatus,
+                data: hasNewerChanges ? prev.data : payloadData,
                 updated_at: now,
               }
             : prev
         );
-        setData(payloadData);
-        setStatus(effectiveStatus);
+        if (!hasNewerChanges) setData(payloadData);
+        setStatus((current) => (current === requestStatus ? effectiveStatus : current));
         const nextSnapshot: DocumentEditorSnapshot = {
           data: payloadData,
           status: effectiveStatus,
-          mailTo,
+          mailTo: requestMailTo,
           mailSubject: nextMailSubject,
           mailMessage: nextMailMessage,
         };
         setBaseSnapshot(serializeEditorSnapshot(nextSnapshot));
         setBaseUpdatedAt(now);
+        if (hasNewerChanges) {
+          setAutosaveState("dirty");
+          setAutosaveMessage("Neuere Änderungen werden als Nächstes gespeichert...");
+          return false;
+        }
         removeLocalDraft(draftKey);
         setAutosaveState("saved");
         setAutosaveMessage("Alle Änderungen gespeichert.");
@@ -714,7 +726,7 @@ export function AdminDocumentEditorPage() {
         else setSaving(false);
       }
     },
-    [currentSnapshot, doc, draftKey, mailMessage, mailSubject, mailTo, preparedDocument, status, token]
+    [currentSnapshot, currentSnapshotSignature, doc, draftKey, mailMessage, mailSubject, mailTo, preparedDocument, status, token]
   );
 
   React.useEffect(() => {
