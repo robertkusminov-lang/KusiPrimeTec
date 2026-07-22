@@ -8,6 +8,10 @@
   --bg-main: #0f172a;
   --bg-soft: #0b1220;
   --bg-deep: #070e1a;
+  --site-background:
+    radial-gradient(120% 95% at 4% -8%, rgba(56, 189, 248, 0.16), transparent 58%),
+    radial-gradient(105% 115% at 94% -10%, rgba(59, 130, 246, 0.14), transparent 56%),
+    linear-gradient(160deg, #060b14 0%, #0b1220 42%, #0f172a 100%);
   --line: rgba(148, 163, 184, 0.2);
   --line-soft: rgba(148, 163, 184, 0.12);
   --line-strong: rgba(56, 189, 248, 0.52);
@@ -43,21 +47,44 @@
 html,
 body,
 #root {
+  width: 100%;
+  min-width: 100%;
   min-height: 100%;
+  margin: 0;
+  padding: 0;
+  background-color: var(--bg-deep);
 }
 
 html {
-  scrollbar-gutter: stable both-edges;
+  scrollbar-gutter: stable;
+  scrollbar-color: #475569 #070e1a;
+  color-scheme: dark;
+  overflow-x: hidden;
+}
+
+html::-webkit-scrollbar {
+  width: 12px;
+}
+
+html::-webkit-scrollbar-track {
+  background: #070e1a;
+}
+
+html::-webkit-scrollbar-thumb {
+  background: #475569;
+  border: 3px solid #070e1a;
+  border-radius: 999px;
+}
+
+html::-webkit-scrollbar-thumb:hover {
+  background: #64748b;
 }
 
 body {
-  margin: 0;
   font-family: "Inter", "Geist", "Segoe UI", sans-serif;
   color: var(--text-main);
-  background:
-    radial-gradient(120% 95% at 4% -8%, rgba(56, 189, 248, 0.16), transparent 58%),
-    radial-gradient(105% 115% at 94% -10%, rgba(59, 130, 246, 0.14), transparent 56%),
-    linear-gradient(160deg, #060b14 0%, #0b1220 42%, #0f172a 100%);
+  background-color: var(--bg-deep);
+  background-image: var(--site-background);
   background-attachment: scroll;
   overflow-x: hidden;
   text-rendering: optimizeLegibility;
@@ -174,6 +201,10 @@ img {
 }
 
 .premium-shell {
+  width: 100%;
+  min-width: 100%;
+  min-height: 100vh;
+  background-color: var(--bg-deep);
   position: relative;
   isolation: isolate;
   overflow-x: clip;
@@ -1697,7 +1728,9 @@ img {
   }
 
   .hero-display {
-    font-size: clamp(2.65rem, 11vw, 4rem);
+    font-size: clamp(1.8rem, 8vw, 2.35rem);
+    overflow-wrap: anywhere;
+    hyphens: auto;
   }
 
   .admin-ui main {
