@@ -5,9 +5,9 @@ import { eur } from "@/lib/format";
 import { useSeo } from "@/hooks/useSeo";
 
 const objektPakete = [
-  { name: "Objektbetreuung Start", price: "399 € / Monat", hours: "inkl. 8 Stunden Betreuungskontingent" },
-  { name: "Objektbetreuung Plus", price: "599 € / Monat", hours: "inkl. 12 Stunden Betreuungskontingent", featured: true },
-  { name: "Objektbetreuung Premium", price: "899 € / Monat", hours: "inkl. 16 Stunden Betreuungskontingent" },
+  { name: "Objektbetreuung Start", price: "489 € / Monat", hours: "inkl. 8 Stunden Betreuungskontingent" },
+  { name: "Objektbetreuung Plus", price: "729 € / Monat", hours: "inkl. 12 Stunden Betreuungskontingent", featured: true },
+  { name: "Objektbetreuung Premium", price: "969 € / Monat", hours: "inkl. 16 Stunden Betreuungskontingent" },
   { name: "Objektbetreuung Individuell", price: "individuell kalkuliert", hours: "Leistungsumfang nach Objekt, Intervall und Bedarf abgestimmt" },
 ];
 

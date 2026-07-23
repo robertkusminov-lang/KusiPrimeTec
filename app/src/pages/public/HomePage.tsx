@@ -53,8 +53,8 @@ const packageRules = [
 const packages = [
   {
     name: "Objektbetreuung Start",
-    kicker: "ab 399 € / Monat",
-    price: "399 € / Monat",
+    kicker: "ab 489 € / Monat",
+    price: "489 € / Monat",
     hours: "inkl. 8 Stunden Betreuungskontingent",
     text: "Für kleinere Gewerbeflächen, Praxen, Büros und Bestandsobjekte mit planbarem technischem Betreuungsbedarf.",
     points: [
@@ -67,8 +67,8 @@ const packages = [
   },
   {
     name: "Objektbetreuung Plus",
-    kicker: "ab 599 € / Monat",
-    price: "599 € / Monat",
+    kicker: "ab 729 € / Monat",
+    price: "729 € / Monat",
     hours: "inkl. 12 Stunden Betreuungskontingent",
     featured: true,
     text: "Empfohlen für Märkte, Gewerbeobjekte und Standorte mit wiederkehrenden technischen Themen im laufenden Betrieb.",
@@ -82,8 +82,8 @@ const packages = [
   },
   {
     name: "Objektbetreuung Premium",
-    kicker: "ab 899 € / Monat",
-    price: "899 € / Monat",
+    kicker: "ab 969 € / Monat",
+    price: "969 € / Monat",
     hours: "inkl. 16 Stunden Betreuungskontingent",
     text: "Für größere Bestandsobjekte oder Kunden, die eine engere laufende technische Betreuung wünschen.",
     points: [
