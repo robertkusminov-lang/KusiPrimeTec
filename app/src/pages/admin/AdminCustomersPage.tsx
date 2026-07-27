@@ -1,6 +1,7 @@
 ﻿import React from "react";
 import { useNavigate, useOutletContext } from "react-router-dom";
 import { Button } from "@/components/ui/Button";
+import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { DataTable } from "@/components/ui/DataTable";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { LoadingSpinner } from "@/components/ui/LoadingSpinner";
@@ -8,7 +9,14 @@ import { RequestTypeBadge } from "@/components/ui/RequestTypeBadge";
 import { SectionTitle } from "@/components/ui/SectionTitle";
 import { StatusChip } from "@/components/ui/StatusChip";
 import { Toast } from "@/components/ui/Toast";
-import { adminTickets, createTicket, deleteCustomerTickets, deleteTicket } from "@/features/apiClient";
+import {
+  adminTickets,
+  archiveCustomer,
+  createTicket,
+  deleteCustomer,
+  deleteTicket,
+  updateCustomer,
+} from "@/features/apiClient";
 import { useDebouncedValue } from "@/hooks/useDebouncedValue";
 import {
   normalizeCustomerEmail,
@@ -25,6 +33,8 @@ import { supabase } from "@/lib/supabase";
 import { RequestType, Ticket, TicketWizardPayload } from "@/types/domain";
 
 type CustomerTypeFilter = "all" | "privat" | "firma";
+type CustomerStatus = "active" | "prospect" | "inactive" | "archived";
+type CustomerStatusFilter = "all" | CustomerStatus;
 type CustomerTab = "tickets" | "contacts" | "notes";
 type CustomerType = "privat" | "firma";
 
@@ -70,6 +80,8 @@ type CustomerNode = {
   tickets: Ticket[];
   ticketsCount: number;
   lastTicketAt: number;
+  createdAtTs: number;
+  status: CustomerStatus;
 };
 
 type CustomerSeed = {
@@ -84,7 +96,21 @@ type CustomerSeed = {
   addressLine: string;
   city: string;
   createdAtTs: number;
+  status: CustomerStatus;
 };
+
+function normalizeCustomerStatus(value: unknown): CustomerStatus {
+  const status = String(value || "").trim().toLowerCase();
+  if (status === "prospect" || status === "inactive" || status === "archived") return status;
+  return "active";
+}
+
+function customerStatusLabel(status: CustomerStatus): string {
+  if (status === "prospect") return "Interessent";
+  if (status === "inactive") return "Inaktiv";
+  if (status === "archived") return "Archiviert";
+  return "Aktiv";
+}
 
 function createdAtTs(ticket: Ticket): number {
   const t = new Date(ticket.created_at).getTime();
@@ -232,6 +258,8 @@ function buildCustomerTree(tickets: Ticket[]): CustomerNode[] {
         tickets: [ticket],
         ticketsCount: 1,
         lastTicketAt: ticketTs,
+        createdAtTs: ticketTs,
+        status: "active",
       });
       continue;
     }
@@ -246,6 +274,7 @@ function buildCustomerTree(tickets: Ticket[]): CustomerNode[] {
     current.email = mergeValue(current.email, email);
     current.phone = mergeValue(current.phone, phone);
     current.addressLine = mergeValue(current.addressLine, addressLine);
+    current.createdAtTs = Math.min(current.createdAtTs || ticketTs, ticketTs || current.createdAtTs);
     if (city && !current.cities.includes(city)) current.cities.push(city);
     current.tickets.push(ticket);
     current.ticketsCount += 1;
@@ -300,6 +329,14 @@ function asCustomerSeed(row: Record<string, unknown>): CustomerSeed {
   const email = normalizeCustomerEmail(String(row.email || ""));
   const phone = normalizeCustomerPhone(String(row.phone || ""));
   const addressLine = mergeValue(
+    [
+      String(row.billing_address_street || ""),
+      [String(row.billing_address_zip || row.zip || ""), String(row.billing_address_city || row.city || "")]
+        .filter(Boolean)
+        .join(" "),
+    ]
+      .filter(Boolean)
+      .join(", "),
     String(row.address || ""),
     String(row.objekt_adresse || "")
   );
@@ -320,6 +357,7 @@ function asCustomerSeed(row: Record<string, unknown>): CustomerSeed {
     addressLine,
     city,
     createdAtTs,
+    status: normalizeCustomerStatus(row.status),
   };
 }
 
@@ -359,11 +397,22 @@ export default function AdminCustomersPage() {
   const [customers, setCustomers] = React.useState<CustomerSeed[]>([]);
   const [q, setQ] = React.useState("");
   const [typeFilter, setTypeFilter] = React.useState<CustomerTypeFilter>("all");
+  const [statusFilter, setStatusFilter] = React.useState<CustomerStatusFilter>("all");
   const [cityFilter, setCityFilter] = React.useState("");
   const [activeTabs, setActiveTabs] = React.useState<Record<string, CustomerTab>>({});
   const [expandedCustomers, setExpandedCustomers] = React.useState<Record<string, boolean>>({});
   const [busyTickets, setBusyTickets] = React.useState<Record<string, boolean>>({});
+  const [pendingTicketDelete, setPendingTicketDelete] = React.useState<Ticket | null>(null);
+  const [ticketDeleteError, setTicketDeleteError] = React.useState("");
   const [busyCustomers, setBusyCustomers] = React.useState<Record<string, boolean>>({});
+  const [pendingCustomerAction, setPendingCustomerAction] = React.useState<{
+    customer: CustomerNode;
+    action: "delete" | "archive" | "restore";
+  } | null>(null);
+  const [customerActionError, setCustomerActionError] = React.useState("");
+  const [editingCustomer, setEditingCustomer] = React.useState<CustomerNode | null>(null);
+  const [editForm, setEditForm] = React.useState<CustomerFormState>(defaultCustomerForm);
+  const [editSaving, setEditSaving] = React.useState(false);
   const [customerSaving, setCustomerSaving] = React.useState(false);
   const [customerForm, setCustomerForm] = React.useState<CustomerFormState>(defaultCustomerForm);
   const [ticketDraftByCustomer, setTicketDraftByCustomer] = React.useState<Record<string, TicketFormState>>({});
@@ -412,13 +461,29 @@ export default function AdminCustomersPage() {
 
     for (const customer of customers) {
       const keyById = `customer:${customer.id}`;
-      if (byKey.has(keyById)) continue;
-
       const keyByMail = customer.email ? `mail:${customer.email}` : "";
-      if (keyByMail && byKey.has(keyByMail)) continue;
-
       const keyByPhone = customer.phone ? `phone:${customer.phone}` : "";
-      if (keyByPhone && byKey.has(keyByPhone)) continue;
+      const existingKey = [keyById, keyByMail, keyByPhone].find((key) => key && byKey.has(key));
+      if (existingKey) {
+        const existing = byKey.get(existingKey);
+        if (existing) {
+          existing.customerId = customer.id;
+          existing.customerType = customer.customerType || existing.customerType;
+          existing.displayName = customer.displayName || existing.displayName;
+          existing.invoiceRecipientName = customer.invoiceRecipientName || existing.invoiceRecipientName;
+          existing.companyName = customer.companyName || existing.companyName;
+          existing.contactPerson = customer.contactPerson || existing.contactPerson;
+          existing.email = customer.email || existing.email;
+          existing.phone = customer.phone || existing.phone;
+          existing.addressLine = customer.addressLine || existing.addressLine;
+          existing.cities = customer.city
+            ? [...new Set([customer.city, ...existing.cities])]
+            : existing.cities;
+          existing.createdAtTs = customer.createdAtTs || existing.createdAtTs;
+          existing.status = customer.status;
+        }
+        continue;
+      }
 
       const key = keyById || keyByMail || keyByPhone || `seed:${customer.id}`;
       const newNode: CustomerNode = {
@@ -436,6 +501,8 @@ export default function AdminCustomersPage() {
         tickets: [],
         ticketsCount: 0,
         lastTicketAt: customer.createdAtTs,
+        createdAtTs: customer.createdAtTs,
+        status: customer.status,
       };
       byKey.set(key, newNode);
     }
@@ -453,6 +520,7 @@ export default function AdminCustomersPage() {
 
     return allCustomers.filter((customer) => {
       if (typeFilter !== "all" && customer.customerType !== typeFilter) return false;
+      if (statusFilter !== "all" && customer.status !== statusFilter) return false;
       if (cityFilter && !customer.cities.includes(cityFilter)) return false;
 
       if (!qNorm) return true;
@@ -471,7 +539,7 @@ export default function AdminCustomersPage() {
         .join(" ");
       return haystack.includes(qNorm);
     });
-  }, [allCustomers, qDebounced, typeFilter, cityFilter]);
+  }, [allCustomers, qDebounced, typeFilter, statusFilter, cityFilter]);
 
   const summary = React.useMemo(() => {
     const customers = filteredCustomers.length;
@@ -480,55 +548,119 @@ export default function AdminCustomersPage() {
     return { customers, companies, tickets: ticketsCount };
   }, [filteredCustomers]);
 
-  const customerTicketIdsByKey = React.useMemo(() => {
-    const map = new Map<string, string[]>();
-    for (const node of allCustomers) map.set(node.key, node.tickets.map((ticket) => ticket.id));
-    return map;
-  }, [allCustomers]);
-
   async function removeSingleTicket(ticket: Ticket) {
-    const ok = window.confirm(`Ticket ${ticket.ticket_nummer} wirklich löschen?`);
-    if (!ok) return;
-
     setBusyTickets((prev) => ({ ...prev, [ticket.id]: true }));
     setError("");
+    setTicketDeleteError("");
     try {
       await deleteTicket(token, ticket.id);
       setTickets((prev) => prev.filter((row) => row.id !== ticket.id));
       setToast({ kind: "ok", text: `Ticket ${ticket.ticket_nummer} gelöscht.` });
+      setPendingTicketDelete(null);
     } catch (err) {
       const msg = toUserMessage(err, "Ticket konnte nicht gelöscht werden.");
       setError(msg);
+      setTicketDeleteError(msg);
       setToast({ kind: "error", text: msg });
     } finally {
       setBusyTickets((prev) => ({ ...prev, [ticket.id]: false }));
     }
   }
 
-  async function removeCustomer(customer: CustomerNode) {
-    const ticketIds = customerTicketIdsByKey.get(customer.key) || customer.tickets.map((ticket) => ticket.id);
-    const toDelete = [...new Set(ticketIds)].filter(Boolean);
-    if (!toDelete.length) return;
-
-    const confirmText = window.prompt(
-      `${customer.displayName} inkl. ${toDelete.length} Ticket(s) löschen.\nZur Bestätigung LOESCHEN eingeben:`,
-      ""
-    );
-    if (confirmText !== "LOESCHEN") return;
-
+  async function runCustomerLifecycleAction(
+    customer: CustomerNode,
+    action: "delete" | "archive" | "restore"
+  ) {
+    if (!customer.customerId) {
+      const message = "Dieser Eintrag besitzt noch keine eindeutige Kunden-ID und kann nicht bearbeitet werden.";
+      setCustomerActionError(message);
+      setToast({ kind: "error", text: message });
+      return;
+    }
     setBusyCustomers((prev) => ({ ...prev, [customer.key]: true }));
     setError("");
+    setCustomerActionError("");
     try {
-      const result = await deleteCustomerTickets(token, toDelete);
-      const idSet = new Set(toDelete);
-      setTickets((prev) => prev.filter((row) => !idSet.has(row.id)));
-      setToast({ kind: "ok", text: `Kunde ${customer.displayName} gelöscht (${result.deleted} Ticket(s)).` });
+      if (action === "delete") {
+        await deleteCustomer(token, customer.customerId);
+        setCustomers((prev) => prev.filter((row) => row.id !== customer.customerId));
+      } else {
+        await archiveCustomer(token, customer.customerId, action === "archive");
+        await loadData();
+      }
+      const message = action === "delete"
+        ? `Kunde ${customer.displayName} endgültig gelöscht.`
+        : action === "archive"
+          ? `Kunde ${customer.displayName} archiviert.`
+          : `Kunde ${customer.displayName} wieder aktiviert.`;
+      setToast({ kind: "ok", text: message });
+      setPendingCustomerAction(null);
+      setExpandedCustomers((prev) => ({ ...prev, [customer.key]: false }));
     } catch (err) {
       const msg = toUserMessage(err, "Kunde konnte nicht gelöscht werden.");
       setError(msg);
+      setCustomerActionError(msg);
       setToast({ kind: "error", text: msg });
     } finally {
       setBusyCustomers((prev) => ({ ...prev, [customer.key]: false }));
+    }
+  }
+
+  function openCustomerEditor(customer: CustomerNode) {
+    if (!customer.customerId) {
+      setToast({ kind: "error", text: "Dieser Eintrag besitzt noch keine eindeutige Kunden-ID." });
+      return;
+    }
+    const address = splitAddress(customer.addressLine);
+    setEditForm({
+      customerType: customer.customerType || "privat",
+      displayName: customer.customerType === "firma" ? customer.contactPerson : customer.invoiceRecipientName,
+      companyName: customer.companyName,
+      contactPerson: customer.contactPerson,
+      email: customer.email,
+      phone: customer.phone,
+      street: address.street,
+      zip: address.zip,
+      city: address.city || customer.cities[0] || "",
+    });
+    setEditingCustomer(customer);
+  }
+
+  async function saveCustomerChanges() {
+    if (!editingCustomer?.customerId) return;
+    const displayName = sanitizeCustomerText(editForm.displayName);
+    const companyName = sanitizeCustomerText(editForm.companyName);
+    const email = normalizeCustomerEmail(editForm.email);
+    const phone = normalizeCustomerPhone(editForm.phone);
+    if (!displayName && !companyName) {
+      setToast({ kind: "error", text: "Bitte Name oder Firmenname angeben." });
+      return;
+    }
+    if (!email && !phone) {
+      setToast({ kind: "error", text: "Bitte mindestens E-Mail oder Telefon angeben." });
+      return;
+    }
+
+    setEditSaving(true);
+    try {
+      await updateCustomer(token, editingCustomer.customerId, {
+        customer_type: editForm.customerType,
+        name: displayName,
+        company_name: companyName,
+        contact_person: sanitizeCustomerText(editForm.contactPerson),
+        email,
+        phone,
+        street: sanitizeCustomerText(editForm.street),
+        zip: sanitizeCustomerText(editForm.zip),
+        city: sanitizeCustomerText(editForm.city),
+      });
+      setEditingCustomer(null);
+      await loadData();
+      setToast({ kind: "ok", text: "Kundendaten gespeichert." });
+    } catch (err) {
+      setToast({ kind: "error", text: toUserMessage(err, "Kundendaten konnten nicht gespeichert werden.") });
+    } finally {
+      setEditSaving(false);
     }
   }
 
@@ -718,6 +850,13 @@ export default function AdminCustomersPage() {
           <option value="privat">Privat</option>
           <option value="firma">Firma</option>
         </select>
+        <select className="premium-input px-3 py-2 text-sm" value={statusFilter} onChange={(e) => setStatusFilter(e.target.value as CustomerStatusFilter)}>
+          <option value="all">Alle Status</option>
+          <option value="active">Aktiv</option>
+          <option value="prospect">Interessent</option>
+          <option value="inactive">Inaktiv</option>
+          <option value="archived">Archiviert</option>
+        </select>
         <select className="premium-input px-3 py-2 text-sm" value={cityFilter} onChange={(e) => setCityFilter(e.target.value)}>
           <option value="">Alle Orte</option>
           {cityOptions.map((city) => (
@@ -836,7 +975,7 @@ export default function AdminCustomersPage() {
       {loading ? <LoadingSpinner label="Kundendaten werden geladen..." className="py-1" /> : null}
 
       {!loading && !filteredCustomers.length ? (
-        <EmptyState text={qDebounced || typeFilter !== "all" || cityFilter ? "Keine Kunden für diesen Filter gefunden." : "Noch keine Kunden angelegt"} />
+        <EmptyState text={qDebounced || typeFilter !== "all" || statusFilter !== "all" || cityFilter ? "Keine Kunden für diesen Filter gefunden." : "Noch keine Kunden angelegt"} />
       ) : null}
 
       {!loading ? (
@@ -865,6 +1004,9 @@ export default function AdminCustomersPage() {
                     </div>
                     <div className="flex flex-wrap items-center gap-2 text-xs">
                       <span className="rounded-full border border-[var(--line)] px-2 py-1 text-[var(--text-soft)]">Tickets: {customer.ticketsCount}</span>
+                      <span className={customer.status === "archived" ? "rounded-full border border-amber-300/40 px-2 py-1 text-amber-200" : "rounded-full border border-emerald-300/35 px-2 py-1 text-emerald-200"}>
+                        {customerStatusLabel(customer.status)}
+                      </span>
                       <span className="rounded-full border border-[var(--line)] px-2 py-1 text-[var(--text-soft)]">
                         Letztes Ticket: {latestTicket ? dateTime(latestTicket.created_at) : "nicht angegeben"}
                       </span>
@@ -880,16 +1022,31 @@ export default function AdminCustomersPage() {
                       {customer.customerType === "firma" ? (
                         <p><span className="text-[var(--text-soft)]">Ansprechpartner:</span> {customer.contactPerson || "nicht angegeben"}</p>
                       ) : null}
-                      <p><span className="text-[var(--text-soft)]">E-Mail:</span> {customer.email || "nicht angegeben"}</p>
-                      <p><span className="text-[var(--text-soft)]">Telefon:</span> {customer.phone || "nicht angegeben"}</p>
+                      <p>
+                        <span className="text-[var(--text-soft)]">E-Mail:</span>{" "}
+                        {customer.email ? <a className="break-all text-electric-200 underline-offset-2 hover:underline" href={`mailto:${customer.email}`}>{customer.email}</a> : "nicht angegeben"}
+                      </p>
+                      <p>
+                        <span className="text-[var(--text-soft)]">Telefon:</span>{" "}
+                        {customer.phone ? <a className="text-electric-200 underline-offset-2 hover:underline" href={`tel:${customer.phone}`}>{customer.phone}</a> : "nicht angegeben"}
+                      </p>
                       <p><span className="text-[var(--text-soft)]">Adresse:</span> {customer.addressLine || "nicht angegeben"}</p>
                       <p><span className="text-[var(--text-soft)]">Orte:</span> {customer.cities.length ? customer.cities.join(", ") : "nicht angegeben"}</p>
+                      <p><span className="text-[var(--text-soft)]">Angelegt:</span> {customer.createdAtTs ? new Date(customer.createdAtTs).toLocaleDateString("de-DE") : "nicht angegeben"}</p>
                     </div>
                     <div className="flex items-start justify-end">
-                      <div className="flex flex-wrap justify-end gap-2">
+                      <div className="grid w-full gap-2 sm:w-auto sm:grid-cols-2 lg:grid-cols-1">
                         <Button
                           variant="secondary"
-                          className="px-4 py-2 text-xs"
+                          className="min-h-11 w-full px-4 py-2 text-sm"
+                          disabled={!customer.customerId}
+                          onClick={() => openCustomerEditor(customer)}
+                        >
+                          Bearbeiten
+                        </Button>
+                        <Button
+                          variant="secondary"
+                          className="min-h-11 w-full px-4 py-2 text-sm"
                           onClick={() =>
                             updateTicketDraft(
                               customer.key,
@@ -902,10 +1059,27 @@ export default function AdminCustomersPage() {
                           Ticket erstellen
                         </Button>
                         <Button
+                          variant="secondary"
+                          className="min-h-11 w-full px-4 py-2 text-sm"
+                          disabled={!customer.customerId || Boolean(busyCustomers[customer.key])}
+                          onClick={() => {
+                            setCustomerActionError("");
+                            setPendingCustomerAction({
+                              customer,
+                              action: customer.status === "archived" ? "restore" : "archive",
+                            });
+                          }}
+                        >
+                          {customer.status === "archived" ? "Aktivieren" : "Archivieren"}
+                        </Button>
+                        <Button
                           variant="danger"
-                          className="px-4 py-2 text-xs"
-                          disabled={Boolean(busyCustomers[customer.key])}
-                          onClick={() => void removeCustomer(customer)}
+                          className="min-h-11 w-full px-4 py-2 text-sm"
+                          disabled={!customer.customerId || Boolean(busyCustomers[customer.key])}
+                          onClick={() => {
+                            setCustomerActionError("");
+                            setPendingCustomerAction({ customer, action: "delete" });
+                          }}
                         >
                           {busyCustomers[customer.key] ? "Löscht..." : "Kunde löschen"}
                         </Button>
@@ -1135,7 +1309,8 @@ export default function AdminCustomersPage() {
                                 disabled={Boolean(busyTickets[ticket.id])}
                                 onClick={(event) => {
                                   event.stopPropagation();
-                                  void removeSingleTicket(ticket);
+                                  setTicketDeleteError("");
+                                  setPendingTicketDelete(ticket);
                                 }}
                               >
                                 {busyTickets[ticket.id] ? "Löscht..." : "Löschen"}
@@ -1170,6 +1345,127 @@ export default function AdminCustomersPage() {
           })}
         </div>
       ) : null}
+
+      {editingCustomer ? (
+        <div className="fixed inset-0 z-[90] overflow-y-auto bg-slate-950/80 p-3 backdrop-blur-sm sm:p-6">
+          <section
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="customer-editor-title"
+            className="mx-auto my-3 w-full max-w-2xl rounded-2xl border border-[var(--line-strong)] bg-[#0b1424] p-4 shadow-[0_28px_80px_rgba(2,6,23,0.72)] sm:my-8 sm:p-6"
+          >
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <h2 id="customer-editor-title" className="text-xl font-semibold text-white">Kunde bearbeiten</h2>
+                <p className="mt-1 text-sm text-[var(--text-soft)]">{editingCustomer.displayName}</p>
+              </div>
+              <Button variant="secondary" className="min-h-11 px-4" disabled={editSaving} onClick={() => setEditingCustomer(null)}>
+                Schließen
+              </Button>
+            </div>
+
+            <div className="mt-5 grid gap-3 sm:grid-cols-2">
+              <label className="grid gap-1 text-sm text-[var(--text-soft)]">
+                Kundentyp
+                <select className="premium-input min-h-11 px-3 py-2 text-white" value={editForm.customerType} onChange={(event) => setEditForm((prev) => ({ ...prev, customerType: event.target.value as CustomerType }))}>
+                  <option value="privat">Privat</option>
+                  <option value="firma">Firma</option>
+                </select>
+              </label>
+              <label className="grid gap-1 text-sm text-[var(--text-soft)]">
+                Name
+                <input className="premium-input min-h-11 px-3 py-2 text-white" value={editForm.displayName} onChange={(event) => setEditForm((prev) => ({ ...prev, displayName: event.target.value }))} />
+              </label>
+              <label className="grid gap-1 text-sm text-[var(--text-soft)]">
+                Firma
+                <input className="premium-input min-h-11 px-3 py-2 text-white" value={editForm.companyName} onChange={(event) => setEditForm((prev) => ({ ...prev, companyName: event.target.value }))} />
+              </label>
+              <label className="grid gap-1 text-sm text-[var(--text-soft)]">
+                Ansprechpartner
+                <input className="premium-input min-h-11 px-3 py-2 text-white" value={editForm.contactPerson} onChange={(event) => setEditForm((prev) => ({ ...prev, contactPerson: event.target.value }))} />
+              </label>
+              <label className="grid gap-1 text-sm text-[var(--text-soft)]">
+                E-Mail
+                <input type="email" className="premium-input min-h-11 px-3 py-2 text-white" value={editForm.email} onChange={(event) => setEditForm((prev) => ({ ...prev, email: event.target.value }))} />
+              </label>
+              <label className="grid gap-1 text-sm text-[var(--text-soft)]">
+                Telefon
+                <input type="tel" className="premium-input min-h-11 px-3 py-2 text-white" value={editForm.phone} onChange={(event) => setEditForm((prev) => ({ ...prev, phone: event.target.value }))} />
+              </label>
+              <label className="grid gap-1 text-sm text-[var(--text-soft)] sm:col-span-2">
+                Straße
+                <input className="premium-input min-h-11 px-3 py-2 text-white" value={editForm.street} onChange={(event) => setEditForm((prev) => ({ ...prev, street: event.target.value }))} />
+              </label>
+              <label className="grid gap-1 text-sm text-[var(--text-soft)]">
+                PLZ
+                <input inputMode="numeric" className="premium-input min-h-11 px-3 py-2 text-white" value={editForm.zip} onChange={(event) => setEditForm((prev) => ({ ...prev, zip: event.target.value }))} />
+              </label>
+              <label className="grid gap-1 text-sm text-[var(--text-soft)]">
+                Ort
+                <input className="premium-input min-h-11 px-3 py-2 text-white" value={editForm.city} onChange={(event) => setEditForm((prev) => ({ ...prev, city: event.target.value }))} />
+              </label>
+            </div>
+
+            <div className="mt-6 grid gap-2 sm:grid-cols-2">
+              <Button className="min-h-11 w-full" disabled={editSaving} onClick={() => void saveCustomerChanges()}>
+                {editSaving ? "Speichert..." : "Änderungen speichern"}
+              </Button>
+              <Button variant="secondary" className="min-h-11 w-full" disabled={editSaving} onClick={() => setEditingCustomer(null)}>
+                Abbrechen
+              </Button>
+            </div>
+          </section>
+        </div>
+      ) : null}
+
+      <ConfirmDialog
+        open={Boolean(pendingTicketDelete)}
+        subject={pendingTicketDelete ? `Ticket ${formatTicketNumber(pendingTicketDelete.ticket_nummer)}` : undefined}
+        error={ticketDeleteError}
+        busy={Boolean(pendingTicketDelete && busyTickets[pendingTicketDelete.id])}
+        onClose={() => {
+          setTicketDeleteError("");
+          setPendingTicketDelete(null);
+        }}
+        onConfirm={() => {
+          if (pendingTicketDelete) void removeSingleTicket(pendingTicketDelete);
+        }}
+      />
+
+      <ConfirmDialog
+        open={Boolean(pendingCustomerAction)}
+        title={
+          pendingCustomerAction?.action === "delete"
+            ? "Eintrag endgültig löschen?"
+            : pendingCustomerAction?.action === "archive"
+              ? "Kunde archivieren?"
+              : "Kunde wieder aktivieren?"
+        }
+        description={
+          pendingCustomerAction?.action === "delete"
+            ? "Diese Aktion kann nicht rückgängig gemacht werden. Bestehende Tickets, Objekte oder Kundenkonten verhindern die Löschung."
+            : "Der Kundenstamm und alle Zuordnungen bleiben vollständig erhalten."
+        }
+        subject={pendingCustomerAction?.customer.displayName}
+        error={customerActionError}
+        confirmLabel={
+          pendingCustomerAction?.action === "delete"
+            ? "Endgültig löschen"
+            : pendingCustomerAction?.action === "archive"
+              ? "Kunde archivieren"
+              : "Kunde aktivieren"
+        }
+        busy={Boolean(pendingCustomerAction && busyCustomers[pendingCustomerAction.customer.key])}
+        onClose={() => {
+          setCustomerActionError("");
+          setPendingCustomerAction(null);
+        }}
+        onConfirm={() => {
+          if (pendingCustomerAction) {
+            void runCustomerLifecycleAction(pendingCustomerAction.customer, pendingCustomerAction.action);
+          }
+        }}
+      />
     </div>
   );
 }

@@ -1,6 +1,7 @@
 import React from "react";
 import { useNavigate, useOutletContext, useParams } from "react-router-dom";
 import { Button } from "@/components/ui/Button";
+import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { GlassCard } from "@/components/ui/GlassCard";
 import { LoadingSpinner } from "@/components/ui/LoadingSpinner";
 import { RequestTypeBadge } from "@/components/ui/RequestTypeBadge";
@@ -20,7 +21,7 @@ import { dateTime, formatTicketNumber, formatTimeRange, labelStatus } from "@/li
 import { readLocalDraft, removeLocalDraft, writeLocalDraft } from "@/lib/localDraft";
 import { TicketDetailResponse, TicketDocument, TicketStatus, TICKET_STATUSES } from "@/types/domain";
 
-const STATUS_VALUES: TicketStatus[] = [...TICKET_STATUSES];
+  const STATUS_VALUES: TicketStatus[] = [...TICKET_STATUSES];
 const TICKET_DRAFT_PREFIX = "kpt:ticket-detail:";
 
 type AutosaveState = "idle" | "dirty" | "saving" | "saved" | "invalid" | "error";
@@ -248,6 +249,8 @@ export default function AdminTicketDetailPage() {
   const [autosaveState, setAutosaveState] = React.useState<AutosaveState>("idle");
   const [autosaveMessage, setAutosaveMessage] = React.useState("Automatisches Speichern aktiv.");
   const [deleting, setDeleting] = React.useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = React.useState(false);
+  const [deleteError, setDeleteError] = React.useState("");
   const [docBusy, setDocBusy] = React.useState<null | "rapport">(null);
   const [form, setForm] = React.useState<TicketFormState | null>(null);
   const saveLockRef = React.useRef(false);
@@ -583,18 +586,20 @@ export default function AdminTicketDetailPage() {
 
   async function removeCurrentTicket() {
     if (!detail) return;
-    const ok = window.confirm(`Ticket ${formatTicketNumber(detail.ticket.ticket_nummer)} wirklich löschen?`);
-    if (!ok) return;
 
     setDeleting(true);
     setError("");
     setInfo("");
+    setDeleteError("");
     try {
       await deleteTicket(token, detail.ticket.id);
       removeLocalDraft(draftKey);
+      setDeleteDialogOpen(false);
       navigate("/admin/tickets", { replace: true });
     } catch (err) {
-      setError(toUserMessage(err, "Ticket konnte nicht gelöscht werden."));
+      const message = toUserMessage(err, "Ticket konnte nicht gelöscht werden.");
+      setError(message);
+      setDeleteError(message);
     } finally {
       setDeleting(false);
     }
@@ -932,7 +937,10 @@ export default function AdminTicketDetailPage() {
               variant="danger"
               className="px-4 py-2 text-xs"
               disabled={isBusy}
-              onClick={() => void removeCurrentTicket()}
+              onClick={() => {
+                setDeleteError("");
+                setDeleteDialogOpen(true);
+              }}
             >
               {deleting ? "Löscht..." : "Ticket löschen"}
             </Button>
@@ -949,6 +957,18 @@ export default function AdminTicketDetailPage() {
           </div>
         </GlassCard>
       </div>
+
+      <ConfirmDialog
+        open={deleteDialogOpen}
+        subject={`Ticket ${formatTicketNumber(ticket.ticket_nummer)}`}
+        error={deleteError}
+        busy={deleting}
+        onClose={() => {
+          setDeleteError("");
+          setDeleteDialogOpen(false);
+        }}
+        onConfirm={() => void removeCurrentTicket()}
+      />
     </div>
   );
 }

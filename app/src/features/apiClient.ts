@@ -2271,26 +2271,53 @@ export async function ackAgentMessage(token: string, runId: string): Promise<{ o
   return await apiPost<{ run_id: string }, { ok: boolean }>("admin-agent-message-ack", { run_id }, token);
 }
 
-export async function deleteTicket(_token: string, id: string): Promise<{ ok: true }> {
-  const ticketId = String(id || "").trim();
-  if (!ticketId) throw new Error("Ticket-ID fehlt.");
+export type AdminRecordActionResult = {
+  ok: true;
+  deleted?: boolean;
+  archived?: boolean;
+  dependency_counts?: Record<string, number>;
+};
 
-  const { error } = await supabase.from("tickets").delete().eq("id", ticketId);
-  if (error) throw new Error(error.message);
-  return { ok: true };
+export async function adminRecordAction(
+  token: string,
+  payload: Record<string, unknown>
+): Promise<AdminRecordActionResult> {
+  return await apiPost<Record<string, unknown>, AdminRecordActionResult>("admin-object-actions", payload, token);
 }
 
-export async function deleteCustomerTickets(_token: string, ticketIds: string[]): Promise<{ ok: true; deleted: number }> {
-  const ids = [...new Set((ticketIds || []).map((v) => String(v || "").trim()).filter(Boolean))];
-  if (!ids.length) return { ok: true, deleted: 0 };
+export async function deleteTicket(token: string, id: string): Promise<{ ok: true }> {
+  const ticketId = String(id || "").trim();
+  if (!ticketId) throw new Error("Ticket-ID fehlt.");
+  return await adminRecordAction(token, { action: "delete_ticket", ticket_id: ticketId });
+}
 
-  const { error, count } = await supabase
-    .from("tickets")
-    .delete({ count: "exact" })
-    .in("id", ids);
-  if (error) throw new Error(error.message);
+export async function deleteCustomer(token: string, customerId: string): Promise<AdminRecordActionResult> {
+  const id = String(customerId || "").trim();
+  if (!id) throw new Error("Kunden-ID fehlt.");
+  return await adminRecordAction(token, { action: "delete_customer", customer_id: id });
+}
 
-  return { ok: true, deleted: Number(count ?? ids.length) };
+export async function archiveCustomer(
+  token: string,
+  customerId: string,
+  archive: boolean
+): Promise<AdminRecordActionResult> {
+  const id = String(customerId || "").trim();
+  if (!id) throw new Error("Kunden-ID fehlt.");
+  return await adminRecordAction(token, {
+    action: archive ? "archive_customer" : "restore_customer",
+    customer_id: id,
+  });
+}
+
+export async function updateCustomer(
+  token: string,
+  customerId: string,
+  values: Record<string, unknown>
+): Promise<AdminRecordActionResult> {
+  const id = String(customerId || "").trim();
+  if (!id) throw new Error("Kunden-ID fehlt.");
+  return await adminRecordAction(token, { action: "update_customer", customer_id: id, values });
 }
 
 export async function createDocument(

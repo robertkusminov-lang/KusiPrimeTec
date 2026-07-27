@@ -1,6 +1,7 @@
 import React from "react";
 import { useNavigate, useOutletContext, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/Button";
+import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { DataTable } from "@/components/ui/DataTable";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { LoadingSpinner } from "@/components/ui/LoadingSpinner";
@@ -39,6 +40,8 @@ export default function AdminTicketsPage() {
   const [error, setError] = React.useState("");
   const [toast, setToast] = React.useState<{ kind: "ok" | "error"; text: string } | null>(null);
   const [busyDelete, setBusyDelete] = React.useState<Record<string, boolean>>({});
+  const [pendingDelete, setPendingDelete] = React.useState<Ticket | null>(null);
+  const [deleteError, setDeleteError] = React.useState("");
 
   React.useEffect(() => {
     if (!toast) return;
@@ -117,11 +120,9 @@ export default function AdminTicketsPage() {
   }, [debounced, dueToday, page, requestType, sort, status, token, urgency, withoutSchedule]);
 
   async function removeTicket(row: Ticket) {
-    const ok = window.confirm(`Ticket ${formatTicketNumber(row.ticket_nummer)} wirklich l\u00f6schen?`);
-    if (!ok) return;
-
     setBusyDelete((prev) => ({ ...prev, [row.id]: true }));
     setError("");
+    setDeleteError("");
 
     try {
       await deleteTicket(token, row.id);
@@ -138,9 +139,11 @@ export default function AdminTicketsPage() {
       }
 
       setToast({ kind: "ok", text: `Ticket ${formatTicketNumber(row.ticket_nummer)} gel\u00f6scht.` });
+      setPendingDelete(null);
     } catch (err) {
       const message = toUserMessage(err, "Ticket konnte nicht gel\u00f6scht werden.");
       setError(message);
+      setDeleteError(message);
       setToast({ kind: "error", text: message });
     } finally {
       setBusyDelete((prev) => ({ ...prev, [row.id]: false }));
@@ -322,7 +325,8 @@ export default function AdminTicketsPage() {
                     disabled={Boolean(busyDelete[row.id])}
                     onClick={(event) => {
                       event.stopPropagation();
-                      void removeTicket(row);
+                      setDeleteError("");
+                      setPendingDelete(row);
                     }}
                   >
                     {busyDelete[row.id] ? "L\u00f6scht..." : "L\u00f6schen"}
@@ -338,6 +342,20 @@ export default function AdminTicketsPage() {
       ) : (
         <EmptyState text="Keine aktiven Tickets vorhanden." />
       )}
+
+      <ConfirmDialog
+        open={Boolean(pendingDelete)}
+        subject={pendingDelete ? `Ticket ${formatTicketNumber(pendingDelete.ticket_nummer)}` : undefined}
+        error={deleteError}
+        busy={Boolean(pendingDelete && busyDelete[pendingDelete.id])}
+        onClose={() => {
+          setDeleteError("");
+          setPendingDelete(null);
+        }}
+        onConfirm={() => {
+          if (pendingDelete) void removeTicket(pendingDelete);
+        }}
+      />
 
       <div className="flex flex-col gap-2 text-sm text-[var(--text-soft)] sm:flex-row sm:items-center sm:justify-between">
         <p>Serverseitige Filterung aktiv. Dadurch bleiben Seitenzahlen und Ladezeiten stabil.</p>

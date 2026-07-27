@@ -23,6 +23,40 @@ function splitAddress(address: string): { street: string | null; zip: string | n
   return { street, zip: null, city: tail || null };
 }
 
+function asEmail(value: unknown): string {
+  return asText(value, 254).toLowerCase();
+}
+
+function asPhone(value: unknown): string {
+  return asText(value, 80).replace(/[^\d+]/g, "");
+}
+
+function isMissingRelation(message: string): boolean {
+  const lower = String(message || "").toLowerCase();
+  return lower.includes("does not exist") || lower.includes("schema cache");
+}
+
+async function countReferences(
+  supabase: ReturnType<typeof serviceClient>,
+  table: string,
+  column: string,
+  id: string
+): Promise<number> {
+  const { count, error } = await supabase
+    .from(table)
+    .select("id", { count: "exact", head: true })
+    .eq(column, id);
+  if (error) {
+    if (isMissingRelation(error.message)) return 0;
+    throw new Error(error.message);
+  }
+  return Number(count || 0);
+}
+
+function hasDependencies(counts: Record<string, number>): boolean {
+  return Object.values(counts).some((value) => value > 0);
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return options();
   if (req.method !== "POST") return json({ error: "Method not allowed" }, 405);
@@ -132,18 +166,170 @@ Deno.serve(async (req) => {
       const objectId = asText(body.object_id, 80);
       if (!objectId) return json({ error: "object_id fehlt." }, 400);
 
-      const { error: detachErr } = await supabase.from("tickets").update({ object_id: null }).eq("object_id", objectId);
-      if (detachErr) return json({ error: detachErr.message }, 500);
+      const dependencyCounts = {
+        tickets: await countReferences(supabase, "tickets", "object_id", objectId),
+        notes: await countReferences(supabase, "object_notes", "object_id", objectId),
+      };
+      if (hasDependencies(dependencyCounts)) {
+        return json({
+          error: "Dieses Objekt kann nicht gelöscht werden, da noch Tickets oder Notizen zugeordnet sind. Bitte deaktiviere das Objekt stattdessen.",
+          dependency_counts: dependencyCounts,
+        }, 409);
+      }
 
-      const { error: deleteErr } = await supabase.from("objects").delete().eq("id", objectId);
-      if (!deleteErr) return json({ ok: true });
-
-      const { error: softErr } = await supabase
+      const { error: deleteErr, count } = await supabase
         .from("objects")
-        .update({ is_active: false, updated_at: new Date().toISOString() })
+        .delete({ count: "exact" })
         .eq("id", objectId);
-      if (softErr) return json({ error: deleteErr.message }, 500);
-      return json({ ok: true, soft_deleted: true });
+      if (deleteErr) return json({ error: deleteErr.message }, 500);
+      if (!count) return json({ error: "Objekt wurde nicht gefunden oder bereits gelöscht." }, 404);
+      return json({ ok: true, deleted: true });
+    }
+
+    if (action === "archive_object" || action === "restore_object") {
+      const objectId = asText(body.object_id, 80);
+      if (!objectId) return json({ error: "object_id fehlt." }, 400);
+      const isActive = action === "restore_object";
+      const { error, count } = await supabase
+        .from("objects")
+        .update({ is_active: isActive, updated_at: new Date().toISOString() }, { count: "exact" })
+        .eq("id", objectId);
+      if (error) return json({ error: error.message }, 500);
+      if (!count) return json({ error: "Objekt wurde nicht gefunden." }, 404);
+      return json({ ok: true, archived: !isActive });
+    }
+
+    if (action === "delete_ticket") {
+      const ticketId = asText(body.ticket_id, 80);
+      if (!ticketId) return json({ error: "ticket_id fehlt." }, 400);
+
+      const dependencyCounts = {
+        documents: await countReferences(supabase, "ticket_documents", "ticket_id", ticketId),
+        reports: await countReferences(supabase, "reports", "ticket_id", ticketId),
+        offers: await countReferences(supabase, "offers", "ticket_id", ticketId),
+        invoices: await countReferences(supabase, "invoices", "ticket_id", ticketId),
+        attachments: await countReferences(supabase, "ticket_attachments", "ticket_id", ticketId),
+        messages: await countReferences(supabase, "ticket_messages", "ticket_id", ticketId),
+      };
+      if (hasDependencies(dependencyCounts)) {
+        return json({
+          error: "Dieses Ticket kann nicht gelöscht werden, da noch Dokumente, Rapporte, Anhänge oder Nachrichten zugeordnet sind. Bitte archiviere das Ticket stattdessen.",
+          dependency_counts: dependencyCounts,
+        }, 409);
+      }
+
+      const { error, count } = await supabase
+        .from("tickets")
+        .delete({ count: "exact" })
+        .eq("id", ticketId);
+      if (error) return json({ error: error.message }, 500);
+      if (!count) return json({ error: "Ticket wurde nicht gefunden oder bereits gelöscht." }, 404);
+      return json({ ok: true, deleted: true });
+    }
+
+    if (action === "delete_customer") {
+      const customerId = asText(body.customer_id, 80);
+      if (!customerId) return json({ error: "customer_id fehlt." }, 400);
+
+      const { data: customer, error: customerError } = await supabase
+        .from("customers")
+        .select("id,auth_user_id")
+        .eq("id", customerId)
+        .maybeSingle();
+      if (customerError) return json({ error: customerError.message }, 500);
+      if (!customer) return json({ error: "Kunde wurde nicht gefunden oder bereits gelöscht." }, 404);
+
+      const dependencyCounts = {
+        tickets: await countReferences(supabase, "tickets", "customer_id", customerId),
+        objects: await countReferences(supabase, "objects", "customer_id", customerId),
+        customer_account: asText((customer as Record<string, unknown>).auth_user_id, 80) ? 1 : 0,
+      };
+      if (hasDependencies(dependencyCounts)) {
+        return json({
+          error: "Dieser Kunde kann nicht gelöscht werden, da noch Tickets, Objekte oder ein Kundenkonto zugeordnet sind. Bitte archiviere den Kunden stattdessen.",
+          dependency_counts: dependencyCounts,
+        }, 409);
+      }
+
+      const { error, count } = await supabase
+        .from("customers")
+        .delete({ count: "exact" })
+        .eq("id", customerId);
+      if (error) return json({ error: error.message }, 500);
+      if (!count) return json({ error: "Kunde wurde nicht gefunden oder bereits gelöscht." }, 404);
+      return json({ ok: true, deleted: true });
+    }
+
+    if (action === "archive_customer" || action === "restore_customer") {
+      const customerId = asText(body.customer_id, 80);
+      if (!customerId) return json({ error: "customer_id fehlt." }, 400);
+      const archive = action === "archive_customer";
+      const { error, count } = await supabase
+        .from("customers")
+        .update({
+          status: archive ? "archived" : "active",
+          archived_at: archive ? new Date().toISOString() : null,
+          updated_at: new Date().toISOString(),
+        }, { count: "exact" })
+        .eq("id", customerId);
+      if (error) return json({ error: error.message }, 500);
+      if (!count) return json({ error: "Kunde wurde nicht gefunden." }, 404);
+      return json({ ok: true, archived: archive });
+    }
+
+    if (action === "update_customer") {
+      const customerId = asText(body.customer_id, 80);
+      const values = body.values && typeof body.values === "object"
+        ? body.values as Record<string, unknown>
+        : {};
+      if (!customerId) return json({ error: "customer_id fehlt." }, 400);
+
+      const customerType = asText(values.customer_type, 20).toLowerCase();
+      const name = asText(values.name, 180);
+      const company = asText(values.company_name, 180);
+      const contactPerson = asText(values.contact_person, 180);
+      const email = asEmail(values.email);
+      const phone = asPhone(values.phone);
+      const street = asText(values.street, 180);
+      const zip = asText(values.zip, 20);
+      const city = asText(values.city, 120);
+
+      if (customerType !== "privat" && customerType !== "firma") {
+        return json({ error: "Bitte einen gültigen Kundentyp auswählen." }, 400);
+      }
+      if (!name && !company) return json({ error: "Bitte Name oder Firmenname angeben." }, 400);
+      if (customerType === "firma" && !company) return json({ error: "Bei Kundentyp Firma ist der Firmenname erforderlich." }, 400);
+      if (!email && !phone) return json({ error: "Bitte mindestens E-Mail oder Telefon angeben." }, 400);
+
+      const invoiceRecipientName = customerType === "firma" ? company : name;
+      const update = {
+        customer_type: customerType,
+        name: name || company,
+        company: company || null,
+        company_name: company || null,
+        invoice_recipient_name: invoiceRecipientName,
+        contact_person: contactPerson || null,
+        email: email || null,
+        phone: phone || null,
+        billing_address_street: street || null,
+        billing_address_zip: zip || null,
+        billing_address_city: city || null,
+        zip: zip || null,
+        city: city || null,
+        updated_at: new Date().toISOString(),
+      };
+      const { error, count } = await supabase
+        .from("customers")
+        .update(update, { count: "exact" })
+        .eq("id", customerId);
+      if (error) {
+        if (String(error.code || "") === "23505") {
+          return json({ error: "E-Mail-Adresse oder Telefonnummer wird bereits von einem anderen Kunden verwendet." }, 409);
+        }
+        return json({ error: error.message }, 500);
+      }
+      if (!count) return json({ error: "Kunde wurde nicht gefunden." }, 404);
+      return json({ ok: true });
     }
 
     return json({ error: "Unbekannte Aktion." }, 400);

@@ -2,13 +2,14 @@ import React from "react";
 import clsx from "clsx";
 import { useNavigate, useOutletContext } from "react-router-dom";
 import { Button } from "@/components/ui/Button";
+import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { LoadingSpinner } from "@/components/ui/LoadingSpinner";
 import { RequestTypeBadge } from "@/components/ui/RequestTypeBadge";
 import { SectionTitle } from "@/components/ui/SectionTitle";
 import { StatusChip } from "@/components/ui/StatusChip";
 import { Toast } from "@/components/ui/Toast";
-import { adminTickets, updateTicket, type UpdateTicketPayload } from "@/features/apiClient";
+import { adminRecordAction, adminTickets, updateTicket, type UpdateTicketPayload } from "@/features/apiClient";
 import { SESSION_EXPIRED_MESSAGE, toUserMessage } from "@/lib/errors";
 import { dateTime, formatTicketNumber } from "@/lib/format";
 import { supabase } from "@/lib/supabase";
@@ -27,6 +28,7 @@ type ObjectGroup = {
   street: string | null;
   zip: string | null;
   city: string | null;
+  isActive: boolean;
   inbox: Ticket[];
   active: Ticket[];
   archive: Ticket[];
@@ -46,6 +48,7 @@ type ObjectMeta = {
   street: string | null;
   zip: string | null;
   city: string | null;
+  isActive: boolean;
 };
 
 type AddressParts = {
@@ -251,6 +254,7 @@ function toGroups(rows: Ticket[]): ObjectGroup[] {
         street: parts.street || null,
         zip: parts.zip || null,
         city: parts.city || null,
+        isActive: true,
         inbox: [],
         active: [],
         archive: [],
@@ -329,7 +333,7 @@ async function loadObjectMeta(objectIds: string[]): Promise<Map<string, ObjectMe
   if (!ids.length) return metaMap;
 
   try {
-    const direct = await supabase.from("objects").select("id,name,customer_id,requester_user_id,street,zip,city").in("id", ids);
+    const direct = await supabase.from("objects").select("id,name,customer_id,requester_user_id,street,zip,city,is_active").in("id", ids);
     if (direct.error) throw direct.error;
     for (const row of direct.data || []) {
       const typed = row as {
@@ -340,6 +344,7 @@ async function loadObjectMeta(objectIds: string[]): Promise<Map<string, ObjectMe
         street?: string | null;
         zip?: string | null;
         city?: string | null;
+        is_active?: boolean | null;
       };
       const id = String(typed.id || "").trim();
       if (!id) continue;
@@ -350,6 +355,7 @@ async function loadObjectMeta(objectIds: string[]): Promise<Map<string, ObjectMe
         street: String(typed.street || "").trim() || null,
         zip: String(typed.zip || "").trim() || null,
         city: String(typed.city || "").trim() || null,
+        isActive: typed.is_active !== false,
       });
     }
     return metaMap;
@@ -371,6 +377,7 @@ async function loadObjectMeta(objectIds: string[]): Promise<Map<string, ObjectMe
           street: null,
           zip: null,
           city: null,
+          isActive: true,
         });
       }
     } catch {
@@ -511,6 +518,11 @@ export default function AdminObjectsPage() {
   const [renameBusy, setRenameBusy] = React.useState<Record<string, boolean>>({});
   const [assignBusy, setAssignBusy] = React.useState<Record<string, boolean>>({});
   const [deleteBusy, setDeleteBusy] = React.useState<Record<string, boolean>>({});
+  const [pendingObjectAction, setPendingObjectAction] = React.useState<{
+    group: ObjectGroup;
+    action: "delete" | "archive" | "restore";
+  } | null>(null);
+  const [objectActionError, setObjectActionError] = React.useState("");
   const [renameDraft, setRenameDraft] = React.useState<Record<string, string>>({});
   const [assignDraft, setAssignDraft] = React.useState<Record<string, string>>({});
   const [customerOptions, setCustomerOptions] = React.useState<CustomerAccessOption[]>([]);
@@ -564,6 +576,7 @@ export default function AdminObjectsPage() {
           street,
           zip,
           city,
+          isActive: meta?.isActive ?? group.isActive,
           address: composeAddress({ street, zip, city }, group.address),
         };
       });
@@ -745,28 +758,35 @@ export default function AdminObjectsPage() {
     }
   }
 
-  async function deleteObject(group: ObjectGroup) {
+  async function runObjectLifecycleAction(group: ObjectGroup, action: "delete" | "archive" | "restore") {
     if (!group.objectId) {
       setToast({ kind: "error", text: "Dieses Objekt kann nicht gel\u00f6scht werden, weil noch keine Objekt-ID existiert." });
       return;
     }
 
-    const check = window.prompt(`Sicherheitsabfrage: Zum L\u00f6schen "${group.title}" bitte L\u00d6SCHEN eingeben:`, "");
-    if (String(check || "").trim().toUpperCase() !== "L\u00d6SCHEN") return;
-
     setDeleteBusy((prev) => ({ ...prev, [group.key]: true }));
+    setObjectActionError("");
     try {
-      const invoked = await supabase.functions.invoke("admin-object-actions", {
-        body: { action: "delete_object", object_id: group.objectId },
+      await adminRecordAction(token, {
+        action: action === "delete" ? "delete_object" : action === "archive" ? "archive_object" : "restore_object",
+        object_id: group.objectId,
       });
-      if (invoked.error) throw invoked.error;
-      const data = invoked.data as { error?: string; soft_deleted?: boolean } | null;
-      if (data?.error) throw new Error(data.error);
 
-      setToast({ kind: "ok", text: data?.soft_deleted ? "Objekt deaktiviert (Soft-Delete)." : "Objekt gel\u00f6scht." });
+      const successText = action === "delete"
+        ? "Objekt endgültig gelöscht."
+        : action === "archive"
+          ? "Objekt deaktiviert."
+          : "Objekt wieder aktiviert.";
+      setToast({ kind: "ok", text: successText });
+      setPendingObjectAction(null);
       await load();
     } catch (err) {
-      setToast({ kind: "error", text: toUserMessage(err, "Objekt konnte nicht gel\u00f6scht werden.") });
+      const fallback = action === "delete"
+        ? "Objekt konnte nicht gelöscht werden."
+        : "Objektstatus konnte nicht geändert werden.";
+      const message = toUserMessage(err, fallback);
+      setObjectActionError(message);
+      setToast({ kind: "error", text: message });
     } finally {
       setDeleteBusy((prev) => ({ ...prev, [group.key]: false }));
     }
@@ -888,10 +908,24 @@ export default function AdminObjectsPage() {
                           {renameBusy[group.key] ? "Speichert..." : "Speichern"}
                         </Button>
                         <Button
+                          variant="secondary"
+                          className="w-full px-3 py-2 text-sm sm:w-auto"
+                          disabled={!group.objectId || Boolean(deleteBusy[group.key])}
+                          onClick={() => {
+                            setObjectActionError("");
+                            setPendingObjectAction({ group, action: group.isActive ? "archive" : "restore" });
+                          }}
+                        >
+                          {group.isActive ? "Deaktivieren" : "Aktivieren"}
+                        </Button>
+                        <Button
                           variant="danger"
                           className="w-full px-3 py-2 text-sm sm:w-auto"
                           disabled={!group.objectId || Boolean(deleteBusy[group.key])}
-                          onClick={() => void deleteObject(group)}
+                          onClick={() => {
+                            setObjectActionError("");
+                            setPendingObjectAction({ group, action: "delete" });
+                          }}
                         >
                           {deleteBusy[group.key] ? "L\u00f6scht..." : "L\u00f6schen"}
                         </Button>
@@ -978,6 +1012,43 @@ export default function AdminObjectsPage() {
       </section>
 
       {toast ? <Toast kind={toast.kind} text={toast.text} /> : null}
+
+      <ConfirmDialog
+        open={Boolean(pendingObjectAction)}
+        title={
+          pendingObjectAction?.action === "delete"
+            ? "Eintrag endgültig löschen?"
+            : pendingObjectAction?.action === "archive"
+              ? "Objekt deaktivieren?"
+              : "Objekt wieder aktivieren?"
+        }
+        description={
+          pendingObjectAction?.action === "delete"
+            ? "Diese Aktion kann nicht rückgängig gemacht werden. Zugeordnete Tickets oder Notizen verhindern die Löschung."
+            : pendingObjectAction?.action === "archive"
+              ? "Das Objekt bleibt mit allen Zuordnungen erhalten und kann später wieder aktiviert werden."
+              : "Das Objekt wird wieder für die laufende Verwaltung aktiviert."
+        }
+        subject={pendingObjectAction?.group.title}
+        error={objectActionError}
+        confirmLabel={
+          pendingObjectAction?.action === "delete"
+            ? "Endgültig löschen"
+            : pendingObjectAction?.action === "archive"
+              ? "Objekt deaktivieren"
+              : "Objekt aktivieren"
+        }
+        busy={Boolean(pendingObjectAction && deleteBusy[pendingObjectAction.group.key])}
+        onClose={() => {
+          setObjectActionError("");
+          setPendingObjectAction(null);
+        }}
+        onConfirm={() => {
+          if (pendingObjectAction) {
+            void runObjectLifecycleAction(pendingObjectAction.group, pendingObjectAction.action);
+          }
+        }}
+      />
     </div>
   );
 }
