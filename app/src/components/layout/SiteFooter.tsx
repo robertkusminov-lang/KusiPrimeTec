@@ -13,9 +13,9 @@ export function SiteFooter() {
           <section className="space-y-3">
             <h2 className="text-sm font-semibold uppercase tracking-wide text-white">KusiPrimeTec</h2>
             <p className="text-sm text-[var(--text-soft)]">
-              Technischer Immobilienservice und handwerklich-technischer Allround-Service im zulässigen Rahmen für Wohn- und Gewerbeobjekte im Bestand.
+              Technischer Immobilienservice mit ergänzendem Objekt- & Hausmeisterservice für Wohn- und Gewerbeobjekte im Bestand.
             </p>
-            <p className="text-xs text-[var(--text-muted)]">Objektbetreuung · Kleinreparaturen im zulässigen Rahmen · Projektkoordination</p>
+            <p className="text-xs text-[var(--text-muted)]">Störungsservice · Objekt- & Hausmeisterservice · Objektbetreuung · Projektkoordination</p>
           </section>
 
           <section className="space-y-3">

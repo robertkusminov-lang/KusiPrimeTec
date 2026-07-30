@@ -1,80 +1,98 @@
-﻿import { LazySection } from "@/components/ui/LazySection";
-import { BUSINESS_RULES } from "@/config/businessRules";
-import { PREISE } from "@/data/content";
-import { eur } from "@/lib/format";
+import { LazySection } from "@/components/ui/LazySection";
+import {
+  PackageComparison,
+  PackageGrid,
+  PricingFaq,
+  PublicPriceNotes,
+  ServicePricingCards,
+} from "@/components/public/PricingSections";
+import { PUBLIC_PRICING, PUBLIC_SCOPE_NOTICE } from "@/config/publicServices";
 import { useSeo } from "@/hooks/useSeo";
-
-const objektPakete = [
-  { name: "Objektbetreuung Start", price: "489 € / Monat", hours: "inkl. 8 Stunden Betreuungskontingent" },
-  { name: "Objektbetreuung Plus", price: "729 € / Monat", hours: "inkl. 12 Stunden Betreuungskontingent", featured: true },
-  { name: "Objektbetreuung Premium", price: "969 € / Monat", hours: "inkl. 16 Stunden Betreuungskontingent" },
-  { name: "Objektbetreuung Individuell", price: "individuell kalkuliert", hours: "Leistungsumfang nach Objekt, Intervall und Bedarf abgestimmt" },
-];
+import { eur } from "@/lib/format";
 
 export default function PreisePage() {
   useSeo({
-    title: "Technischer Immobilienservice & Objektbetreuung | Preise",
-    description: `Transparente Preisstruktur für technischen Service und Objektbetreuung in Schorndorf: ${BUSINESS_RULES.pricing.hourlyRateEur} € pro Stunde, ${BUSINESS_RULES.pricing.serviceCallFlatEur} € Einsatzpauschale und klare Objektbetreuung-Pakete.`,
+    title: "Preise für technischen Immobilienservice | KusiPrimeTec",
+    description:
+      "Transparente Preise für technischen Störungsservice, Objekt- und Hausmeisterservice sowie monatliche Objektbetreuung im Raum Schorndorf.",
+    canonicalPath: "/preise",
   });
 
   return (
-    <div className="page-enter page-stack">
-      <header className="premium-card page-card-lg">
-        <p className="text-xs uppercase tracking-[0.12em] text-electric-300">Preisstruktur</p>
-        <h1 className="public-page-title mt-2 text-white">Transparente Konditionen für Objektbetreuung und Service im Bestand</h1>
-        <p className="public-page-lead mt-3 max-w-3xl">
-          Klare Sätze, nachvollziehbare Zuschläge und saubere Dokumentation als Grundlage für planbare Betreuung und belastbare Entscheidungen.
+    <div className="page-enter page-stack-large">
+      <header className="premium-card premium-card-strong page-card-lg">
+        <p className="text-xs uppercase tracking-[0.12em] text-electric-300">Transparente Preisstruktur</p>
+        <h1 className="public-page-title mt-2 text-white">Technischer Service und Objektbetreuung klar kalkuliert</h1>
+        <p className="public-page-lead mt-3 max-w-4xl">
+          Zwei klar abgegrenzte Einzelleistungen und vier planbare Betreuungspakete für Gewerbeobjekte und
+          Bestandsimmobilien. Leistungen, Zeit und Folgeschritte werden nachvollziehbar dokumentiert.
         </p>
       </header>
 
-      <LazySection className="grid gap-4 md:grid-cols-2" minHeight={220} delayMs={50}>
-        <article className="premium-card p-5">
-          <h2 className="text-lg font-semibold text-white">Einzelleistungen</h2>
-          <ul className="mt-3 grid gap-2 text-sm text-[var(--text-soft)]">
-            <li className="flex items-center justify-between gap-2"><span>Stundensatz</span><strong className="text-white">{eur(PREISE.stundensatz)}</strong></li>
-            <li className="flex items-center justify-between gap-2"><span>Einsatzpauschale</span><strong className="text-white">{eur(PREISE.einsatzpauschale)}</strong></li>
-          </ul>
-          <p className="mt-3 text-xs text-[var(--text-soft)]">{PREISE.abrechnungshinweis}</p>
-        </article>
-
-        <article className="premium-card p-5">
-          <h2 className="text-lg font-semibold text-white">Zuschläge</h2>
-          <ul className="mt-3 grid gap-2 text-sm text-[var(--text-soft)]">
-            {PREISE.zuschlaege.map((item) => (
-              <li key={item.label} className="flex items-center justify-between gap-2"><span>{item.label}</span><strong className="text-white">{item.value}</strong></li>
-            ))}
-          </ul>
-        </article>
-      </LazySection>
-
-      <LazySection className="premium-card page-card" minHeight={220} delayMs={70}>
-        <h2 className="text-lg font-semibold text-white">Objektbetreuung-Pakete</h2>
-        <p className="mt-2 text-sm text-[var(--text-soft)]">
-          Feste monatliche Betreuung für Gewerbeobjekte und Bestandsimmobilien. Für besondere Anforderungen kann zusätzlich ein individuelles Betreuungskonzept erstellt werden.
-        </p>
-        <div className="mt-4 grid gap-3 md:grid-cols-2 2xl:grid-cols-4">
-          {objektPakete.map((item) => (
-            <article key={item.name} className={`rounded-2xl border bg-slate-950/40 p-4 ${item.featured ? "border-electric-300/60" : "border-[var(--line)]"}`}>
-              {item.featured ? <p className="mb-2 inline-flex rounded-full border border-electric-200/45 bg-electric-400/15 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-electric-200">Empfohlen</p> : null}
-              <p className="text-xs uppercase tracking-[0.12em] text-electric-300">{item.name}</p>
-              <p className="mt-2 text-2xl font-bold text-white">{item.price}</p>
-              <p className="mt-1 text-sm text-electric-100">{item.hours}</p>
-            </article>
-          ))}
-        </div>
-      </LazySection>
-
-      <LazySection className="grid gap-4 md:grid-cols-2" minHeight={180} delayMs={80}>
-        <article className="premium-card p-5">
-          <h2 className="text-lg font-semibold text-white">Zusatzleistungen bei aktiver Objektbetreuung</h2>
-          <p className="mt-3 text-sm leading-relaxed text-[var(--text-soft)]">
-            Zusätzliche Arbeiten außerhalb des vereinbarten Betreuungskontingents werden nur nach vorheriger Abstimmung eingeplant. Material, Ersatzteile und Fremdleistungen werden separat berechnet.
+      <LazySection className="space-y-5" minHeight={440} delayMs={35}>
+        <header className="max-w-3xl">
+          <p className="text-xs uppercase tracking-[0.12em] text-electric-300">Einzelaufträge</p>
+          <h2 className="mt-2 text-2xl font-bold text-white md:text-3xl">Passender Service für den konkreten Bedarf</h2>
+        </header>
+        <ServicePricingCards />
+        <article className="premium-card page-card">
+          <h3 className="text-lg font-semibold text-white">Abrechnung und Einsatzpauschale</h3>
+          <p className="mt-3 text-sm leading-relaxed text-[var(--text-main)]">{PUBLIC_PRICING.billingNotice}</p>
+          <p className="mt-2 text-sm leading-relaxed text-[var(--text-soft)]">
+            Die bestehende Einsatzpauschale für Einzelaufträge beträgt {eur(PUBLIC_PRICING.serviceCallFlatEur)}.
+            Beginn, Ende und Pausen werden dokumentiert. Größere oder nicht sicher abschätzbare Aufwände stimmen wir
+            vorab ab.
           </p>
         </article>
-        <article className="premium-card p-5">
-          <h2 className="text-lg font-semibold text-white">Projektkoordination</h2>
-          <p className="mt-2 text-sm text-[var(--text-soft)]">{PREISE.projektkoordination}</p>
+      </LazySection>
+
+      <LazySection className="space-y-5" minHeight={760} delayMs={55}>
+        <header className="max-w-4xl">
+          <p className="text-xs uppercase tracking-[0.12em] text-electric-300">Monatliche Objektbetreuung</p>
+          <h2 className="mt-2 text-2xl font-bold text-white md:text-3xl">Vier Pakete für klare Betreuungsstrukturen</h2>
+          <p className="mt-2 text-sm leading-relaxed text-[var(--text-soft)] md:text-base">
+            Basis schafft einen planbaren Einstieg, Business deckt wiederkehrenden Bedarf ab, Pro ist die
+            ausgewogene Standardlösung und Priority ergänzt mehr Reserve, Termine und Priorisierung.
+          </p>
+        </header>
+        <PackageGrid />
+      </LazySection>
+
+      <LazySection className="premium-card page-card-lg" minHeight={500} delayMs={70}>
+        <p className="text-xs uppercase tracking-[0.12em] text-electric-300">Direkter Vergleich</p>
+        <h2 className="mt-2 text-2xl font-bold text-white md:text-3xl">Leistungsumfang auf einen Blick</h2>
+        <p className="mt-2 mb-5 max-w-3xl text-sm text-[var(--text-soft)]">
+          Auf kleineren Bildschirmen lassen sich die Pakete einzeln aufklappen. Auf großen Bildschirmen steht die
+          vollständige Vergleichstabelle zur Verfügung.
+        </p>
+        <PackageComparison />
+      </LazySection>
+
+      <LazySection className="grid gap-4 lg:grid-cols-2" minHeight={300} delayMs={85}>
+        <article className="premium-card page-card">
+          <h2 className="text-xl font-bold text-white">Zusatzstunden nach Freigabe</h2>
+          <p className="mt-3 text-sm leading-relaxed text-[var(--text-main)]">{PUBLIC_PRICING.additionalHoursNotice}</p>
+          <p className="mt-3 text-sm leading-relaxed text-[var(--text-soft)]">{PUBLIC_PRICING.additionalHoursLimits}</p>
         </article>
+        <article className="premium-card page-card">
+          <h2 className="text-xl font-bold text-white">Preis- und Anfahrtshinweise</h2>
+          <div className="mt-3">
+            <PublicPriceNotes />
+          </div>
+        </article>
+      </LazySection>
+
+      <LazySection className="premium-card page-card" minHeight={180} delayMs={95}>
+        <h2 className="text-xl font-bold text-white">Leistungsabgrenzung</h2>
+        <p className="mt-3 text-sm leading-relaxed text-[var(--text-soft)] md:text-base">{PUBLIC_SCOPE_NOTICE}</p>
+      </LazySection>
+
+      <LazySection className="space-y-5" minHeight={520} delayMs={110}>
+        <header>
+          <p className="text-xs uppercase tracking-[0.12em] text-electric-300">Häufige Fragen</p>
+          <h2 className="mt-2 text-2xl font-bold text-white md:text-3xl">Preise und Leistungsrahmen verständlich erklärt</h2>
+        </header>
+        <PricingFaq />
       </LazySection>
     </div>
   );

@@ -1,5 +1,7 @@
 ﻿import { BUSINESS_RULES } from "@/config/businessRules";
 
+import { PUBLIC_SCOPE_NOTICE } from "@/config/publicServices";
+
 export const NAV_PUBLIC = [
   { href: "/", label: "Startseite" },
   { href: "/leistungen", label: "Leistungen" },
@@ -20,6 +22,10 @@ export const FOOTER_LINKS = [
 
 export const LEISTUNGEN = [
   {
+    titel: "Objekt- & Hausmeisterservice",
+    text: "Kontrollgänge, Sicht- und Funktionskontrollen, geeignete Kleinreparaturen, Mängelaufnahme und organisatorische Unterstützung mit digitaler Dokumentation.",
+  },
+  {
     titel: "Technische Objektbetreuung",
     text: "Regelmäßige Unterstützung für Bestandsimmobilien, Gewerbeobjekte, Praxen, Büros, Märkte und Verwaltungen mit klarer Dokumentation, festen Ansprechpartnern und planbaren Abläufen.",
   },
@@ -37,8 +43,7 @@ export const LEISTUNGEN = [
   },
 ];
 
-export const LEISTUNGSUMFANG_HINWEIS =
-  "KusiPrimeTec arbeitet als technischer Immobilienservice und handwerklich-technischer Allround-Service im zulässigen Rahmen. Der Schwerpunkt liegt auf Bestandsbetreuung, Wartung, Instandhaltung, Störungsaufnahme, Mängeldokumentation, Kleinreparaturen im zulässigen Rahmen und Projektkoordination. Nicht angeboten werden meisterpflichtige Arbeiten, Abnahmen, eigenverantwortliche Planung oder Errichtung elektrotechnischer Anlagen, Arbeiten an Zähleranlagen sowie Prüfungen oder Abnahmen, die gesetzlich oder handwerksrechtlich einem qualifizierten Fachbetrieb vorbehalten sind. Soweit entsprechende Facharbeiten erforderlich sind, werden qualifizierte Fachfirmen hinzugezogen oder koordiniert.";
+export const LEISTUNGSUMFANG_HINWEIS = PUBLIC_SCOPE_NOTICE;
 
 export const KOORDINATION_RECHTSTEXT =
   "Projektkoordination ist bei KusiPrimeTec eine organisatorische Leistung. Dazu gehören Angebotseinholung, Terminabstimmung, Maßnahmenbegleitung, Rückmeldung an Eigentümer oder Verwaltung sowie strukturierte Dokumentation. Die fachliche Ausführung fachpflichtiger Arbeiten erfolgt ausschließlich durch qualifizierte Fachfirmen; Verantwortung, Ausführung, Abnahme und Gewährleistung verbleiben beim jeweils beauftragten Unternehmen.";

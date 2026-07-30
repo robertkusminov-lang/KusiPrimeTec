@@ -1,8 +1,10 @@
-﻿export const BUSINESS_RULES = {
+import { PUBLIC_PRICING, TECHNICAL_SERVICE_HOURLY_EUR } from "@/config/publicServices";
+
+export const BUSINESS_RULES = {
   pricing: {
-    hourlyRateEur: 80,
-    serviceCallFlatEur: 39,
-    roundingRuleText: "Jede angefangene Stunde wird als volle Stunde abgerechnet.",
+    hourlyRateEur: TECHNICAL_SERVICE_HOURLY_EUR,
+    serviceCallFlatEur: PUBLIC_PRICING.serviceCallFlatEur,
+    roundingRuleText: PUBLIC_PRICING.billingNotice,
   },
   surcharges: [
     { label: "Mo-Fr nach 17:00 Uhr (Überstunden)", value: "+20 %" },
@@ -34,6 +36,7 @@
   scope: {
     allowed: [
       "Technische Objektbetreuung im Bestand",
+      "Objekt- & Hausmeisterservice im zulässigen Rahmen",
       "Handwerklich-technischer Allround-Service im zulässigen Rahmen",
       "Kleinreparaturen im zulässigen Rahmen",
       "Störungsaufnahme, Sichtkontrollen und Mängeldokumentation",
@@ -41,7 +44,7 @@
       "Koordination externer Fachfirmen bei fachpflichtigen Arbeiten",
     ],
     text:
-      "KusiPrimeTec arbeitet als technischer Immobilienservice und handwerklich-technischer Allround-Service im zulässigen Rahmen. Der Schwerpunkt liegt auf Bestandsbetreuung, Wartung, Instandhaltung, Störungsaufnahme, Mängeldokumentation, Kleinreparaturen im zulässigen Rahmen und Projektkoordination.",
+      "KusiPrimeTec arbeitet als technischer Immobilienservice mit ergänzendem Objekt- und Hausmeisterservice im zulässigen Rahmen. Der Schwerpunkt liegt auf Bestandsbetreuung, Wartung, Instandhaltung, Störungsaufnahme, Mängeldokumentation, geeigneten Kleinreparaturen und Projektkoordination.",
   },
   exclusions: [
     "Neuinstallationen und Komplettsanierungen",

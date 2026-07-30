@@ -20,6 +20,7 @@ import { initGoogleTag, trackGooglePageView } from "@/lib/googleTag";
 import { getAnalyticsConsent, subscribeAnalyticsConsent } from "@/lib/consent";
 
 const LeistungenPage = lazy(loadPublicRoute("/leistungen"));
+const HausmeisterservicePage = lazy(loadPublicRoute("/hausmeisterservice"));
 const PreisePage = lazy(loadPublicRoute("/preise"));
 const AblaufPage = lazy(loadPublicRoute("/ablauf"));
 const ObjektbetreuungPage = lazy(loadPublicRoute("/objektbetreuung"));
@@ -272,6 +273,7 @@ export default function App() {
       <Route element={<PublicShell />}>
         <Route path="/" element={<HomePage />} />
         <Route path="/leistungen" element={<LazyRoute><LeistungenPage /></LazyRoute>} />
+        <Route path="/hausmeisterservice" element={<LazyRoute><HausmeisterservicePage /></LazyRoute>} />
         <Route path="/objektbetreuung" element={<LazyRoute><ObjektbetreuungPage /></LazyRoute>} />
         <Route path="/preise" element={<LazyRoute><PreisePage /></LazyRoute>} />
         <Route path="/ablauf" element={<LazyRoute><AblaufPage /></LazyRoute>} />

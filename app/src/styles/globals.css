@@ -375,6 +375,36 @@ img {
   color: rgba(148, 163, 184, 0.9);
 }
 
+.public-package-card,
+.pricing-details,
+.pricing-details summary,
+.pricing-details dd {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.pricing-details summary {
+  list-style: none;
+}
+
+.pricing-details summary::-webkit-details-marker {
+  display: none;
+}
+
+.pricing-details summary::after {
+  content: "+";
+  flex: 0 0 auto;
+  margin-left: 0.75rem;
+  color: #7dd3fc;
+  font-size: 1.25rem;
+  line-height: 1;
+  transition: transform 180ms ease-out;
+}
+
+.pricing-details[open] summary::after {
+  transform: rotate(45deg);
+}
+
 .btn-primary-premium {
   border: 1px solid rgba(125, 211, 252, 0.62);
   color: #eaf2ff;
@@ -1731,6 +1761,40 @@ img {
     font-size: clamp(1.8rem, 8vw, 2.35rem);
     overflow-wrap: anywhere;
     hyphens: auto;
+  }
+
+  .public-package-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .public-package-pro {
+    order: 1;
+  }
+
+  .public-package-basis {
+    order: 2;
+  }
+
+  .public-package-business {
+    order: 3;
+  }
+
+  .public-package-priority {
+    order: 4;
+  }
+
+  .premium-shell main .btn-primary-premium,
+  .premium-shell main .btn-secondary-premium {
+    min-height: 52px;
+    padding-block: 0.85rem;
+    font-size: 1rem;
+    line-height: 1.25;
+  }
+
+  .premium-shell main input,
+  .premium-shell main select,
+  .premium-shell main textarea {
+    font-size: 16px;
   }
 
   .admin-ui main {

@@ -1,6 +1,8 @@
 ﻿import { NavLink } from "react-router-dom";
 import { LazySection } from "@/components/ui/LazySection";
+import { PackageGrid, ServicePricingCards } from "@/components/public/PricingSections";
 import { BUSINESS_RULES } from "@/config/businessRules";
+import { PUBLIC_PRICING, PUBLIC_SERVICES } from "@/config/publicServices";
 import {
   KOORDINATION_RECHTSTEXT,
   LEISTUNGEN,
@@ -10,6 +12,7 @@ import {
   PUBLIC_PATHS,
 } from "@/data/content";
 import { useSeo } from "@/hooks/useSeo";
+import { eur } from "@/lib/format";
 
 const trustBar = [
   `Fokusregion ${BUSINESS_RULES.serviceArea.text}`,
@@ -41,80 +44,12 @@ const whyKusiPoints = [
   "Koordination qualifizierter Fachfirmen bei Bedarf",
 ];
 
-const packageRules = [
-  "Nicht genutzte Stunden können bis zu 2 Monate übertragen werden.",
-  "Danach verfallen nicht genutzte Stunden.",
-  "Eine Auszahlung nicht genutzter Stunden ist ausgeschlossen.",
-  "Material, Ersatzteile und Fremdleistungen werden separat berechnet.",
-  "Zusatzarbeiten während aktiver Objektbetreuung werden vorab abgestimmt.",
-  "Kurzfristige Einsätze erfolgen nach Verfügbarkeit. Ein garantierter Notdienst ist nicht enthalten.",
-];
-
-const packages = [
-  {
-    name: "Objektbetreuung Start",
-    kicker: "ab 489 € / Monat",
-    price: "489 € / Monat",
-    hours: "inkl. 8 Stunden Betreuungskontingent",
-    text: "Für kleinere Gewerbeflächen, Praxen, Büros und Bestandsobjekte mit planbarem technischem Betreuungsbedarf.",
-    points: [
-      "8 Stunden pro Monat",
-      "Kleinreparaturen im zulässigen Rahmen",
-      "Mängelaufnahme und Fotodokumentation",
-      "Rundgänge und Sichtkontrollen nach Bedarf",
-      "Fester technischer Ansprechpartner",
-    ],
-  },
-  {
-    name: "Objektbetreuung Plus",
-    kicker: "ab 729 € / Monat",
-    price: "729 € / Monat",
-    hours: "inkl. 12 Stunden Betreuungskontingent",
-    featured: true,
-    text: "Empfohlen für Märkte, Gewerbeobjekte und Standorte mit wiederkehrenden technischen Themen im laufenden Betrieb.",
-    points: [
-      "12 Stunden pro Monat",
-      "Störungsaufnahme und Priorisierung",
-      "Kleinreparaturen und Instandhaltung im Bestand",
-      "Koordination externer Fachfirmen nach Absprache",
-      "Bevorzugte Terminplanung gegenüber Einzelanfragen",
-    ],
-  },
-  {
-    name: "Objektbetreuung Premium",
-    kicker: "ab 969 € / Monat",
-    price: "969 € / Monat",
-    hours: "inkl. 16 Stunden Betreuungskontingent",
-    text: "Für größere Bestandsobjekte oder Kunden, die eine engere laufende technische Betreuung wünschen.",
-    points: [
-      "16 Stunden pro Monat",
-      "Regelmäßige Objektkontrollen",
-      "Laufende Mängel- und Maßnahmenliste",
-      "Monatliche Rückmeldung nach Bedarf",
-      "Direkter Ansprechpartner und koordinierte Folgeschritte",
-    ],
-  },
-  {
-    name: "Objektbetreuung Individuell",
-    kicker: "individuell abgestimmt",
-    price: "individuell kalkuliert",
-    hours: "Leistungsumfang nach Objekt, Intervall und Bedarf abgestimmt",
-    text: "Für Kunden mit mehreren Standorten, besonderen Abläufen oder erweitertem Koordinations- und Dokumentationsbedarf.",
-    points: [
-      "Individuelles Betreuungskonzept",
-      "Flexible Kontingente oder feste Betreuungstage",
-      "Mehrere Objekte oder Ansprechpartner möglich",
-      "Abgestimmte Dokumentation und Priorisierung",
-      "Eigenes Angebot nach Erstgespräch",
-    ],
-  },
-];
-
 export default function HomePage() {
   useSeo({
     title: "Technischer Immobilienservice & Objektbetreuung | KusiPrimeTec Schorndorf",
     description:
-      "KusiPrimeTec bietet technische Objektbetreuung, Kleinreparaturen im zulässigen Rahmen, Instandhaltung, Störungsaufnahme und Projektkoordination für Bestandsimmobilien und Gewerbeobjekte im Raum Schorndorf.",
+      "KusiPrimeTec bietet technischen Störungsservice, Objekt- und Hausmeisterservice, monatliche Objektbetreuung und Projektkoordination im Raum Schorndorf.",
+    canonicalPath: "/",
   });
 
   return (
@@ -162,7 +97,7 @@ export default function HomePage() {
 
             <div className="space-y-1 text-xs text-[var(--text-soft)] md:text-sm">
               <p>
-                {BUSINESS_RULES.pricing.hourlyRateEur} € / Stunde · {BUSINESS_RULES.pricing.serviceCallFlatEur} € Einsatzpauschale · Zuschläge klar geregelt
+                {PUBLIC_SERVICES[0].name} {eur(PUBLIC_SERVICES[0].priceEur)} / Stunde · {PUBLIC_SERVICES[1].name} {eur(PUBLIC_SERVICES[1].priceEur)} / Stunde
               </p>
               <p>{BUSINESS_RULES.response.text}</p>
             </div>
@@ -311,56 +246,37 @@ export default function HomePage() {
         </div>
       </LazySection>
 
+      <LazySection className="space-y-5" minHeight={420} delayMs={85}>
+        <header className="max-w-4xl">
+          <p className="text-xs uppercase tracking-[0.12em] text-electric-300">Zwei klare Einzelleistungen</p>
+          <h2 className="mt-2 text-2xl font-bold text-white md:text-3xl">Objektunterstützung oder technische Störungsaufnahme</h2>
+          <p className="mt-2 text-sm leading-relaxed text-[var(--text-soft)] md:text-base">
+            Der Objekt- & Hausmeisterservice unterstützt laufende Objektaufgaben. Der technische Störungsservice
+            konzentriert sich auf Erstaufnahme, Fehlereingrenzung und dokumentierte nächste Schritte.
+          </p>
+        </header>
+        <ServicePricingCards compact />
+        <p className="text-xs leading-relaxed text-[var(--text-soft)]">{PUBLIC_PRICING.taxNotice}</p>
+      </LazySection>
+
       <LazySection className="premium-card premium-card-strong page-card-lg" minHeight={620} delayMs={95}>
         <header className="max-w-4xl space-y-3">
           <p className="text-xs uppercase tracking-[0.12em] text-electric-300">Objektbetreuung als Hauptangebot</p>
           <h2 className="text-2xl font-bold text-white md:text-4xl">Planbare Objektbetreuung statt unstrukturierter Einzelanfragen</h2>
           <p className="text-sm leading-relaxed text-[var(--text-soft)] md:text-base">
-            Die KusiPrimeTec Objektbetreuung richtet sich an Unternehmen, Märkte, Praxen, Büros, Eigentümer und Verwaltungen, die wiederkehrende technische Themen im Bestand strukturiert lösen wollen. Neben den festen Paketen ist auch ein individuell kalkuliertes Betreuungskonzept möglich.
+            Die KusiPrimeTec Objektbetreuung richtet sich an Unternehmen, Märkte, Praxen, Büros, Eigentümer und
+            Verwaltungen, die wiederkehrende technische Themen im Bestand strukturiert lösen wollen. Vier klar
+            abgestufte Pakete verbinden planbare Kontingente, Vor-Ort-Termine und digitale Dokumentation.
           </p>
         </header>
 
-        <section className="mt-6 grid gap-4 md:grid-cols-2 2xl:grid-cols-4">
-          {packages.map((pkg) => (
-            <article key={pkg.name} className={`premium-card flex h-full flex-col p-5 ${pkg.featured ? "border-electric-300/60 bg-electric-400/10 shadow-[0_20px_60px_rgba(56,189,248,0.12)]" : "border-[var(--line)]"}`}>
-              <p className="text-xs uppercase tracking-[0.12em] text-electric-300">{pkg.kicker}</p>
-              <h3 className="mt-2 text-xl font-bold text-white">{pkg.name}</h3>
-              {pkg.featured ? <p className="mt-2 inline-flex w-fit rounded-full border border-electric-200/45 bg-electric-400/15 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-electric-200">Empfohlen</p> : null}
-              <p className="mt-3 text-3xl font-extrabold text-white">{pkg.price}</p>
-              <p className="mt-1 text-sm font-semibold text-electric-100">{pkg.hours}</p>
-              <p className="mt-4 text-sm leading-relaxed text-[var(--text-soft)]">{pkg.text}</p>
-              <ul className="mt-4 grid gap-2 text-sm text-[var(--text-main)]">
-                {pkg.points.map((point) => (
-                  <li key={point} className="flex gap-2"><span className="text-electric-300">✓</span><span>{point}</span></li>
-                ))}
-              </ul>
-            </article>
-          ))}
+        <section className="mt-6">
+          <PackageGrid compact />
         </section>
-
-        <div className="mt-6 grid gap-4 lg:grid-cols-2">
-          <article className="premium-card p-5">
-            <h3 className="text-lg font-semibold text-white">Wichtige Regeln</h3>
-            <ul className="mt-3 grid gap-2 text-sm text-[var(--text-main)]">
-              {packageRules.map((rule) => (
-                <li key={rule}>• {rule}</li>
-              ))}
-            </ul>
-          </article>
-          <article className="premium-card p-5">
-            <h3 className="text-lg font-semibold text-white">Ihre Vorteile</h3>
-            <ul className="mt-3 grid gap-2 text-sm text-[var(--text-main)]">
-              <li>• Fester technischer Ansprechpartner</li>
-              <li>• Planbare monatliche Kosten</li>
-              <li>• Kleinreparaturen im zulässigen Rahmen</li>
-              <li>• Rundgänge und Sichtkontrollen nach Bedarf</li>
-              <li>• Koordination externer Fachfirmen bei Bedarf</li>
-            </ul>
-          </article>
-        </div>
+        <p className="mt-4 text-xs leading-relaxed text-[var(--text-soft)]">{PUBLIC_PRICING.taxNotice}</p>
 
         <div className="mt-6 flex flex-wrap gap-3">
-          <NavLink to="/objektbetreuung-anfrage" className="btn-primary-premium rounded-full px-5 py-3 text-sm font-semibold">Objektbetreuung anfragen</NavLink>
+          <NavLink to="/objektbetreuung-anfrage?auswahl=pro" className="btn-primary-premium inline-flex min-h-12 items-center rounded-full px-5 py-3 text-sm font-semibold">Pro unverbindlich anfragen</NavLink>
           <NavLink to="/preise" className="btn-secondary-premium rounded-full px-5 py-3 text-sm font-semibold">Preise ansehen</NavLink>
           <a href="https://wa.me/491776364393?text=Hallo%20KusiPrimeTec%2C%20ich%20interessiere%20mich%20für%20die%20Objektbetreuung." target="_blank" rel="noopener noreferrer" className="btn-secondary-premium rounded-full px-5 py-3 text-sm font-semibold">WhatsApp-Kontakt</a>
         </div>

@@ -1,8 +1,9 @@
 const SOURCE_RULES = {
   pricing: {
-    hourlyRateEur: 80,
+    hourlyRateEur: 79,
     serviceCallFlatEur: 39,
-    roundingRuleText: "Jede angefangene Stunde wird als volle Stunde abgerechnet.",
+    roundingRuleText:
+      "Je Einsatz gilt eine Mindestberechnung von einer Arbeitsstunde. Anschließend erfolgt die Abrechnung transparent in 15-Minuten-Einheiten.",
   },
   surcharges: [
     { label: "Mo-Fr nach 17:00 Uhr (Überstunden)", value: "+20 %" },

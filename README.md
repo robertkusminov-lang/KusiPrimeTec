@@ -140,7 +140,7 @@ Seiten:
 
 Preislogik:
 
-1. 80 € Stundensatz
+1. 79 € technischer Störungsservice pro Arbeitsstunde
 2. 39 € Einsatzpauschale
 3. +20 % Mo-Fr nach 17:00 Uhr
 4. +35 % Samstag

@@ -4,6 +4,7 @@ type LoaderModule = { default: ComponentType<unknown> };
 
 const publicRouteLoaders: Record<string, () => Promise<LoaderModule>> = {
   "/leistungen": () => import("@/pages/public/LeistungenPage"),
+  "/hausmeisterservice": () => import("@/pages/public/HausmeisterservicePage"),
   "/preise": () => import("@/pages/public/PreisePage"),
   "/ablauf": () => import("@/pages/public/AblaufPage"),
   "/objektbetreuung": () => import("@/pages/public/ObjektbetreuungPage"),

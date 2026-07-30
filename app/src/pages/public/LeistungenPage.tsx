@@ -1,13 +1,14 @@
-﻿import { LazySection } from "@/components/ui/LazySection";
+import { NavLink } from "react-router-dom";
+import { LazySection } from "@/components/ui/LazySection";
+import { PricingFaq, PublicPriceNotes, ServicePricingCards } from "@/components/public/PricingSections";
+import { PUBLIC_SCOPE_NOTICE } from "@/config/publicServices";
 import {
   KOORDINATION_RECHTSTEXT,
   LEISTUNGEN,
   LEISTUNGSUMFANG_ERLAUBT,
-  LEISTUNGSUMFANG_HINWEIS,
   LEISTUNGSUMFANG_NICHT,
 } from "@/data/content";
 import { useSeo } from "@/hooks/useSeo";
-import { NavLink } from "react-router-dom";
 
 const PREMIUM_STANDARDS = [
   "Klare Verantwortlichkeiten und feste Ansprechpartner",
@@ -20,23 +21,39 @@ export default function LeistungenPage() {
   useSeo({
     title: "Technischer Immobilienservice & Leistungen | KusiPrimeTec",
     description:
-      "Technische Objektbetreuung, Kleinreparaturen im zulässigen Rahmen, Instandhaltung, Störungsaufnahme und Projektkoordination für Bestandsimmobilien und Gewerbeobjekte im Raum Schorndorf.",
+      "Technischer Störungsservice, Objekt- und Hausmeisterservice, monatliche Objektbetreuung und Projektkoordination für Bestandsimmobilien im Raum Schorndorf.",
+    canonicalPath: "/leistungen",
   });
 
   return (
-    <div className="page-enter page-stack">
-      <header className="premium-card page-card-lg">
+    <div className="page-enter page-stack-large">
+      <header className="premium-card premium-card-strong page-card-lg">
         <p className="text-xs uppercase tracking-[0.12em] text-electric-300">Leistungsspektrum</p>
         <h1 className="public-page-title mt-2 text-white">Technischer Immobilienservice für Bestandsobjekte</h1>
-        <p className="public-page-lead mt-3 max-w-3xl">
-          Für Unternehmen, Verwaltungen, Eigentümer, Märkte, Praxen und Büros: strukturierte Technikleistungen,
-          handwerklich-technischer Allround-Service im zulässigen Rahmen und saubere Objektprozesse.
-        </p>
-        <p className="mt-2 max-w-3xl text-sm text-electric-100/90 md:text-base">
-          Direkt durch uns: Kleinreparaturen im zulässigen Rahmen, Störungsaufnahme, Sichtkontrollen,
-          Mängeldokumentation und laufende Instandhaltung im Bestand.
+        <p className="public-page-lead mt-3 max-w-4xl">
+          Technischer Störungsservice, Objekt- und Hausmeisterservice, monatliche Objektbetreuung und
+          Projektkoordination für Unternehmen, Verwaltungen und Eigentümer im Raum Schorndorf.
         </p>
       </header>
+
+      <LazySection className="space-y-5" minHeight={460} delayMs={35}>
+        <header className="max-w-3xl">
+          <p className="text-xs uppercase tracking-[0.12em] text-electric-300">Einzelleistungen</p>
+          <h2 className="mt-2 text-2xl font-bold text-white md:text-3xl">Passender Service für Objekt oder Störung</h2>
+          <p className="mt-2 text-sm leading-relaxed text-[var(--text-soft)]">
+            Beide Leistungen werden klar dokumentiert. Je Einsatz gilt eine Stunde Mindestberechnung, danach erfolgt
+            die Abrechnung in 15-Minuten-Einheiten.
+          </p>
+        </header>
+        <ServicePricingCards />
+        <PublicPriceNotes />
+        <NavLink
+          to="/hausmeisterservice"
+          className="btn-secondary-premium inline-flex min-h-12 w-full items-center justify-center rounded-full px-5 py-3 text-sm font-semibold sm:w-fit"
+        >
+          Objekt- & Hausmeisterservice im Detail
+        </NavLink>
+      </LazySection>
 
       <LazySection className="grid gap-4 md:grid-cols-2" minHeight={280} delayMs={50}>
         {LEISTUNGEN.map((item) => (
@@ -47,61 +64,61 @@ export default function LeistungenPage() {
         ))}
       </LazySection>
 
-      <LazySection className="premium-card premium-card-strong page-card-lg" minHeight={180} delayMs={60}>
+      <LazySection className="premium-card premium-card-strong page-card-lg" minHeight={180} delayMs={65}>
         <p className="text-xs uppercase tracking-[0.12em] text-electric-300">ObjektCheck & laufende Betreuung</p>
-        <h2 className="mt-2 text-2xl font-bold text-white">Technische Bestandsaufnahme als Einstieg in klare Objektbetreuung</h2>
+        <h2 className="mt-2 text-2xl font-bold text-white">Bestandsaufnahme als Einstieg in klare Objektbetreuung</h2>
         <p className="mt-3 max-w-3xl text-sm leading-relaxed text-[var(--text-soft)]">
-          Mit dem KusiPrimeTec ObjektCheck erhalten Eigentümer, Hausverwaltungen und Gewerbekunden eine strukturierte
-          Sicht auf sichtbare Mängel, Instandhaltungspunkte und sinnvolle nächste Schritte im Bestand.
+          Der KusiPrimeTec ObjektCheck strukturiert sichtbare Mängel, Instandhaltungspunkte und sinnvolle nächste
+          Schritte. Darauf kann eine planbare monatliche Betreuung mit digitaler Dokumentation aufbauen.
         </p>
         <div className="mt-5 flex flex-wrap gap-3">
-          <NavLink to="/objektbetreuung" className="btn-primary-premium rounded-full px-5 py-3 text-sm font-semibold">
+          <NavLink to="/objektbetreuung" className="btn-primary-premium inline-flex min-h-12 items-center rounded-full px-5 py-3 text-sm font-semibold">
             Objektbetreuung ansehen
           </NavLink>
-          <NavLink to="/objektbetreuung-anfrage" className="btn-secondary-premium rounded-full px-5 py-3 text-sm font-semibold">
-            Objekt unverbindlich besprechen
+          <NavLink to="/objektbetreuung-anfrage?auswahl=pro" className="btn-secondary-premium inline-flex min-h-12 items-center rounded-full px-5 py-3 text-sm font-semibold">
+            Betreuung unverbindlich anfragen
           </NavLink>
         </div>
       </LazySection>
 
-      <LazySection className="premium-card page-card" minHeight={210} delayMs={70}>
-        <h2 className="text-xl font-semibold text-white">Hinweis zu Leistungsumfang</h2>
-        <p className="mt-3 text-sm leading-relaxed text-[var(--text-soft)]">{LEISTUNGSUMFANG_HINWEIS}</p>
+      <LazySection className="premium-card page-card" minHeight={230} delayMs={80}>
+        <h2 className="text-xl font-semibold text-white">Leistungsabgrenzung</h2>
+        <p className="mt-3 text-sm leading-relaxed text-[var(--text-soft)]">{PUBLIC_SCOPE_NOTICE}</p>
         <div className="mt-4 grid gap-3 md:grid-cols-2">
-          <article className="rounded-xl border border-emerald-300/30 bg-emerald-400/8 p-3">
+          <article className="rounded-xl border border-emerald-300/30 bg-emerald-400/8 p-4">
             <p className="text-xs font-semibold uppercase tracking-[0.12em] text-emerald-300">Leistungsrahmen</p>
-            <ul className="mt-2 grid gap-1 text-sm text-[var(--text-main)]">
-              {LEISTUNGSUMFANG_ERLAUBT.map((item) => (
-                <li key={item}>✓ {item}</li>
-              ))}
+            <ul className="mt-2 grid gap-2 text-sm text-[var(--text-main)]">
+              {LEISTUNGSUMFANG_ERLAUBT.map((item) => <li key={item}>✓ {item}</li>)}
             </ul>
           </article>
-          <article className="rounded-xl border border-rose-300/30 bg-rose-400/8 p-3">
-            <p className="text-xs font-semibold uppercase tracking-[0.12em] text-rose-300">Nicht direkt durch uns ausführbar</p>
-            <ul className="mt-2 grid gap-1 text-sm text-[var(--text-main)]">
-              {LEISTUNGSUMFANG_NICHT.map((item) => (
-                <li key={item}>✗ {item}</li>
-              ))}
+          <article className="rounded-xl border border-rose-300/30 bg-rose-400/8 p-4">
+            <p className="text-xs font-semibold uppercase tracking-[0.12em] text-rose-300">Qualifizierte Fachunternehmen</p>
+            <ul className="mt-2 grid gap-2 text-sm text-[var(--text-main)]">
+              {LEISTUNGSUMFANG_NICHT.map((item) => <li key={item}>- {item}</li>)}
             </ul>
           </article>
         </div>
       </LazySection>
 
-      <LazySection className="premium-card page-card" minHeight={170} delayMs={90}>
-        <h2 className="text-xl font-semibold text-white">Projektkoordination externer Gewerke</h2>
-        <p className="mt-2 text-sm leading-relaxed text-[var(--text-soft)]">{KOORDINATION_RECHTSTEXT}</p>
+      <LazySection className="grid gap-4 lg:grid-cols-2" minHeight={200} delayMs={95}>
+        <article className="premium-card page-card">
+          <h2 className="text-xl font-semibold text-white">Projektkoordination externer Gewerke</h2>
+          <p className="mt-2 text-sm leading-relaxed text-[var(--text-soft)]">{KOORDINATION_RECHTSTEXT}</p>
+        </article>
+        <article className="premium-card page-card">
+          <h2 className="text-xl font-semibold text-white">Qualitätsstandard im Tagesgeschäft</h2>
+          <ul className="mt-4 grid gap-3">
+            {PREMIUM_STANDARDS.map((point) => <li key={point} className="text-sm text-[var(--text-main)]">✓ {point}</li>)}
+          </ul>
+        </article>
       </LazySection>
 
-      <LazySection className="premium-card premium-card-strong page-card" minHeight={180} delayMs={110}>
-        <p className="text-xs uppercase tracking-[0.12em] text-electric-300">Qualitätsstandard</p>
-        <h2 className="mt-2 text-xl font-semibold text-white">So sichern wir Qualität im Tagesgeschäft</h2>
-        <ul className="mt-4 grid gap-3 md:grid-cols-2">
-          {PREMIUM_STANDARDS.map((point) => (
-            <li key={point} className="premium-card p-3 text-sm text-[var(--text-main)]">
-              ✓ {point}
-            </li>
-          ))}
-        </ul>
+      <LazySection className="space-y-5" minHeight={520} delayMs={110}>
+        <header>
+          <p className="text-xs uppercase tracking-[0.12em] text-electric-300">Häufige Fragen</p>
+          <h2 className="mt-2 text-2xl font-bold text-white md:text-3xl">Leistungen und Abrechnung erklärt</h2>
+        </header>
+        <PricingFaq />
       </LazySection>
     </div>
   );
