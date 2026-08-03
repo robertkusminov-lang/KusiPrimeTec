@@ -13,7 +13,7 @@ export function ConsentBanner() {
 
   useEffect(() => subscribeOpenConsentSettings(() => setConsent(null)), []);
 
-  if (!ENV.googleTagId || consent !== null) return null;
+  if (!ENV.googleTagIds.length || consent !== null) return null;
 
   return (
     <div className="fixed inset-x-0 bottom-0 z-50 px-4 pb-[max(env(safe-area-inset-bottom),0px)]">

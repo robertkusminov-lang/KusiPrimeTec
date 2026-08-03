@@ -8,11 +8,19 @@ const normalizedConfiguredApiBase =
     ? "/api"
     : configuredApiBase;
 
+const googleTagIds = Array.from(
+  new Set(
+    [import.meta.env.VITE_GOOGLE_TAG_ID, import.meta.env.VITE_GOOGLE_ANALYTICS_ID]
+      .map((value) => String(value || "").trim())
+      .filter(Boolean),
+  ),
+);
+
 export const ENV = {
   apiBase: String(normalizedConfiguredApiBase || derivedApiBase).replace(/\/+$/, ""),
   supabaseUrl,
   supabaseAnonKey: String(import.meta.env.VITE_SUPABASE_ANON_KEY || ""),
-  googleTagId: String(import.meta.env.VITE_GOOGLE_TAG_ID || "").trim(),
+  googleTagIds,
   promoVideoUrl: String(import.meta.env.VITE_PROMO_VIDEO_URL || "/Werbung.mp4").trim(),
   promoVideoPoster: String(import.meta.env.VITE_PROMO_VIDEO_POSTER || "").trim(),
 };

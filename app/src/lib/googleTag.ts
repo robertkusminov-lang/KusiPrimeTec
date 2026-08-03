@@ -10,7 +10,9 @@ declare global {
 let initialized = false;
 
 function ensureGtagScript(tagId: string) {
-  const existing = document.querySelector<HTMLScriptElement>(`script[data-kpt-gtag="${tagId}"]`);
+  const existing = document.querySelector<HTMLScriptElement>(
+    'script[data-kpt-gtag], script[src^="https://www.googletagmanager.com/gtag/js"]',
+  );
   if (existing) return;
 
   const script = document.createElement("script");
@@ -21,10 +23,10 @@ function ensureGtagScript(tagId: string) {
 }
 
 export function initGoogleTag() {
-  const tagId = ENV.googleTagId;
-  if (!tagId || initialized || typeof window === "undefined") return;
+  const tagIds = ENV.googleTagIds;
+  if (!tagIds.length || initialized || typeof window === "undefined") return;
 
-  ensureGtagScript(tagId);
+  ensureGtagScript(tagIds[0]);
 
   window.dataLayer = window.dataLayer || [];
   window.gtag =
@@ -34,20 +36,24 @@ export function initGoogleTag() {
     };
 
   window.gtag("js", new Date());
-  window.gtag("config", tagId, { anonymize_ip: true, send_page_view: false });
+  tagIds.forEach((tagId) => {
+    window.gtag?.("config", tagId, { anonymize_ip: true, send_page_view: false });
+  });
 
   initialized = true;
 }
 
 export function trackGooglePageView(path: string) {
-  const tagId = ENV.googleTagId;
-  if (!tagId || typeof window === "undefined" || typeof window.gtag !== "function") return;
+  const tagIds = ENV.googleTagIds;
+  if (!tagIds.length || typeof window === "undefined" || typeof window.gtag !== "function") return;
 
-  window.gtag("event", "page_view", {
-    page_path: path,
-    page_location: window.location.href,
-    page_title: document.title,
-    send_to: tagId,
+  tagIds.forEach((tagId) => {
+    window.gtag?.("event", "page_view", {
+      page_path: path,
+      page_location: window.location.href,
+      page_title: document.title,
+      send_to: tagId,
+    });
   });
 }
 
