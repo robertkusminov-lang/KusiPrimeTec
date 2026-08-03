@@ -1,6 +1,5 @@
 User-agent: *
 Allow: /
-Disallow: /admin/
-Disallow: /konto/
+Disallow: /api/
 
 Sitemap: https://kusiprimetec.de/sitemap.xml

@@ -13,6 +13,7 @@ import {
 } from "@/data/content";
 import { useSeo } from "@/hooks/useSeo";
 import { eur } from "@/lib/format";
+import { trackGoogleEvent } from "@/lib/googleTag";
 
 const trustBar = [
   `Fokusregion ${BUSINESS_RULES.serviceArea.text}`,
@@ -75,6 +76,7 @@ export default function HomePage() {
       <div className="fixed bottom-5 right-5 z-50 hidden w-[280px] flex-col gap-2 2xl:flex">
         <a
           href="tel:+491776364393"
+          onClick={() => trackGoogleEvent("contact_phone_click", { placement: "home_floating" })}
           className="btn-primary-premium w-full rounded-full px-4 py-3 text-center text-sm font-semibold shadow-[0_16px_40px_rgba(3,14,32,0.5)]"
         >
           Direkt anrufen
@@ -83,6 +85,7 @@ export default function HomePage() {
           href="https://wa.me/491776364393?text=Hallo%20KusiPrimeTec%2C%20ich%20brauche%20Unterstützung."
           target="_blank"
           rel="noopener noreferrer"
+          onClick={() => trackGoogleEvent("whatsapp_click", { placement: "home_floating" })}
           className="btn-secondary-premium w-full rounded-full px-4 py-3 text-center text-sm font-semibold"
         >
           WhatsApp Kontakt
@@ -131,6 +134,7 @@ export default function HomePage() {
                 href="https://wa.me/491776364393?text=Hallo%20KusiPrimeTec%2C%20ich%20habe%20eine%20Frage."
                 target="_blank"
                 rel="noopener noreferrer"
+                onClick={() => trackGoogleEvent("whatsapp_click", { placement: "home_hero" })}
                 className="btn-secondary-premium rounded-full px-6 py-3 text-sm font-semibold"
               >
                 WhatsApp-Kontakt
@@ -140,12 +144,14 @@ export default function HomePage() {
             <div className="grid gap-2 sm:max-w-2xl sm:grid-cols-2">
               <a
                 href="mailto:info@kusiprimetec.de?subject=Anfrage%20KusiPrimeTec"
+                onClick={() => trackGoogleEvent("contact_email_click", { placement: "home_hero" })}
                 className="inline-flex items-center justify-center rounded-full border border-electric-300/35 bg-slate-900/45 px-4 py-2 text-sm text-electric-200 transition hover:border-electric-200/60 hover:text-white"
               >
                 E-Mail: info@kusiprimetec.de
               </a>
               <a
                 href="tel:+491776364393"
+                onClick={() => trackGoogleEvent("contact_phone_click", { placement: "home_hero" })}
                 className="inline-flex items-center justify-center rounded-full border border-electric-300/35 bg-slate-900/45 px-4 py-2 text-sm text-electric-200 transition hover:border-electric-200/60 hover:text-white"
               >
                 Telefon: 0177 6364393
@@ -296,7 +302,7 @@ export default function HomePage() {
         <div className="mt-6 flex flex-wrap gap-3">
           <NavLink to="/objektbetreuung-anfrage?auswahl=pro" className="btn-primary-premium inline-flex min-h-12 items-center rounded-full px-5 py-3 text-sm font-semibold">Pro unverbindlich anfragen</NavLink>
           <NavLink to="/preise" className="btn-secondary-premium rounded-full px-5 py-3 text-sm font-semibold">Preise ansehen</NavLink>
-          <a href="https://wa.me/491776364393?text=Hallo%20KusiPrimeTec%2C%20ich%20interessiere%20mich%20für%20die%20Objektbetreuung." target="_blank" rel="noopener noreferrer" className="btn-secondary-premium rounded-full px-5 py-3 text-sm font-semibold">WhatsApp-Kontakt</a>
+          <a href="https://wa.me/491776364393?text=Hallo%20KusiPrimeTec%2C%20ich%20interessiere%20mich%20für%20die%20Objektbetreuung." target="_blank" rel="noopener noreferrer" onClick={() => trackGoogleEvent("whatsapp_click", { placement: "home_packages" })} className="btn-secondary-premium rounded-full px-5 py-3 text-sm font-semibold">WhatsApp-Kontakt</a>
         </div>
       </LazySection>
 

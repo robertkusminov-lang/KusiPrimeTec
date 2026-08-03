@@ -1,9 +1,12 @@
 import React from "react";
+import { SITE, absoluteSiteUrl, getRouteSeo } from "@/config/site";
+import { getRouteSchemas } from "@/lib/seoSchemas";
 
 interface SeoInput {
-  title: string;
-  description: string;
+  title?: string;
+  description?: string;
   canonicalPath?: string;
+  pathname?: string;
 }
 
 function ensureDescriptionTag(): HTMLMetaElement {
@@ -36,19 +39,48 @@ function ensureCanonical(): HTMLLinkElement {
   return el;
 }
 
-export function useSeo({ title, description, canonicalPath }: SeoInput) {
+export function useSeo({ title, description, canonicalPath, pathname }: SeoInput) {
   React.useEffect(() => {
-    const normalizedPath = canonicalPath === "/" ? "/" : `/${String(canonicalPath || window.location.pathname).replace(/^\/+|\/+$/g, "")}`;
-    const canonicalUrl = `https://kusiprimetec.de${normalizedPath}`;
-    document.title = title;
-    const descriptionTag = ensureDescriptionTag();
-    descriptionTag.setAttribute("content", description);
+    const currentPath = pathname || window.location.pathname;
+    const routeSeo = getRouteSeo(currentPath, { title, description, canonicalPath });
+    const canonicalUrl = absoluteSiteUrl(routeSeo.canonicalPath);
+    const robots = routeSeo.index
+      ? "index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1"
+      : `noindex,${routeSeo.follow === false ? "nofollow" : "follow"},noarchive`;
+    const socialImage = absoluteSiteUrl(SITE.socialImagePath);
 
-    ensureMeta("property", "og:title").setAttribute("content", title);
-    ensureMeta("property", "og:description").setAttribute("content", description);
+    document.title = routeSeo.title;
+    const descriptionTag = ensureDescriptionTag();
+    descriptionTag.setAttribute("content", routeSeo.description);
+
+    ensureMeta("name", "robots").setAttribute("content", robots);
+    ensureMeta("name", "googlebot").setAttribute("content", robots);
+    ensureMeta("property", "og:type").setAttribute("content", "website");
+    ensureMeta("property", "og:locale").setAttribute("content", SITE.locale);
+    ensureMeta("property", "og:site_name").setAttribute("content", SITE.name);
+    ensureMeta("property", "og:title").setAttribute("content", routeSeo.title);
+    ensureMeta("property", "og:description").setAttribute("content", routeSeo.description);
     ensureMeta("property", "og:url").setAttribute("content", canonicalUrl);
-    ensureMeta("name", "twitter:title").setAttribute("content", title);
-    ensureMeta("name", "twitter:description").setAttribute("content", description);
+    ensureMeta("property", "og:image").setAttribute("content", socialImage);
+    ensureMeta("property", "og:image:alt").setAttribute("content", "KusiPrimeTec Logo");
+    ensureMeta("name", "twitter:card").setAttribute("content", "summary_large_image");
+    ensureMeta("name", "twitter:title").setAttribute("content", routeSeo.title);
+    ensureMeta("name", "twitter:description").setAttribute("content", routeSeo.description);
+    ensureMeta("name", "twitter:image").setAttribute("content", socialImage);
     ensureCanonical().setAttribute("href", canonicalUrl);
-  }, [canonicalPath, title, description]);
+
+    const schemas = routeSeo.index ? getRouteSchemas(routeSeo.canonicalPath) : [];
+    let schemaScript = document.querySelector<HTMLScriptElement>('script[data-kpt-route-schema]');
+    if (schemas.length) {
+      if (!schemaScript) {
+        schemaScript = document.createElement("script");
+        schemaScript.type = "application/ld+json";
+        schemaScript.dataset.kptRouteSchema = "true";
+        document.head.appendChild(schemaScript);
+      }
+      schemaScript.textContent = JSON.stringify(schemas.length === 1 ? schemas[0] : schemas);
+    } else {
+      schemaScript?.remove();
+    }
+  }, [canonicalPath, description, pathname, title]);
 }

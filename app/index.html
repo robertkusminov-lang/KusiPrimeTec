@@ -23,47 +23,84 @@
     </script>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link rel="icon" type="image/png" href="/favicon-kpt.png" />
     <link rel="apple-touch-icon" href="/favicon-kpt.png" />
-    <title>Technischer Immobilienservice & Objektservice | KusiPrimeTec</title>
+    <title>Technischer Immobilienservice &amp; Objektbetreuung in Schorndorf | KusiPrimeTec</title>
     <meta
       name="description"
-      content="Technischer Störungsservice, Objekt- und Hausmeisterservice, monatliche Objektbetreuung und Projektkoordination im Raum Schorndorf."
+      content="Technischer Immobilienservice und planbare Objektbetreuung für Bestandsobjekte in Schorndorf und 30 km Umgebung. Direkt und unverbindlich anfragen."
     />
-    <meta name="robots" content="index,follow,max-image-preview:large" />
+    <meta name="robots" content="index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1" />
+    <meta name="googlebot" content="index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1" />
     <meta property="og:type" content="website" />
     <meta property="og:locale" content="de_DE" />
+    <meta property="og:site_name" content="KusiPrimeTec" />
     <link rel="canonical" href="https://kusiprimetec.de/" />
     <meta property="og:url" content="https://kusiprimetec.de/" />
-    <meta property="og:title" content="Technischer Immobilienservice & Objektservice | KusiPrimeTec" />
+    <meta property="og:title" content="Technischer Immobilienservice &amp; Objektbetreuung in Schorndorf | KusiPrimeTec" />
     <meta
       property="og:description"
-      content="Technischer Störungsservice, Objekt- und Hausmeisterservice, monatliche Objektbetreuung und Projektkoordination im Raum Schorndorf."
+      content="Technischer Immobilienservice und planbare Objektbetreuung für Bestandsobjekte in Schorndorf und 30 km Umgebung. Direkt und unverbindlich anfragen."
     />
     <meta property="og:image" content="https://kusiprimetec.de/kpt-logo.png" />
+    <meta property="og:image:alt" content="KusiPrimeTec Logo" />
     <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Technischer Immobilienservice &amp; Objektbetreuung in Schorndorf | KusiPrimeTec" />
+    <meta
+      name="twitter:description"
+      content="Technischer Immobilienservice und planbare Objektbetreuung für Bestandsobjekte in Schorndorf und 30 km Umgebung. Direkt und unverbindlich anfragen."
+    />
     <meta name="twitter:image" content="https://kusiprimetec.de/kpt-logo.png" />
-    <meta name="theme-color" content="#0f172a" />
+    <meta name="theme-color" content="#070e1a" />
     <script type="application/ld+json">
       {
         "@context": "https://schema.org",
-        "@type": "LocalBusiness",
-        "name": "KusiPrimeTec",
-        "description": "Technischer Immobilienservice mit Objekt- und Hausmeisterservice, technischer Störungsaufnahme, monatlicher Objektbetreuung und Projektkoordination",
-        "areaServed": "Schorndorf und 30 km Umgebung",
-        "address": {
-          "@type": "PostalAddress",
-          "postalCode": "73614",
-          "addressLocality": "Schorndorf",
-          "addressCountry": "DE"
-        },
-        "email": "info@kusiprimetec.de",
-        "url": "https://kusiprimetec.de",
-        "knowsAbout": [
-          "Objekt- und Hausmeisterservice",
-          "Technischer Störungsservice",
-          "Monatliche Objektbetreuung",
-          "Projektkoordination"
+        "@graph": [
+          {
+            "@type": "Organization",
+            "@id": "https://kusiprimetec.de/#organization",
+            "name": "KusiPrimeTec",
+            "url": "https://kusiprimetec.de/",
+            "logo": "https://kusiprimetec.de/kpt-logo.png",
+            "email": "info@kusiprimetec.de",
+            "telephone": "+491776364393"
+          },
+          {
+            "@type": ["LocalBusiness", "ProfessionalService"],
+            "@id": "https://kusiprimetec.de/#business",
+            "name": "KusiPrimeTec",
+            "description": "Technischer Immobilienservice mit Objekt- und Hausmeisterservice, technischer Störungsaufnahme, monatlicher Objektbetreuung und Projektkoordination.",
+            "url": "https://kusiprimetec.de/",
+            "image": "https://kusiprimetec.de/kpt-logo.png",
+            "logo": "https://kusiprimetec.de/kpt-logo.png",
+            "email": "info@kusiprimetec.de",
+            "telephone": "+491776364393",
+            "address": {
+              "@type": "PostalAddress",
+              "streetAddress": "Epplerinweg 31",
+              "postalCode": "73614",
+              "addressLocality": "Schorndorf",
+              "addressCountry": "DE"
+            },
+            "areaServed": "Schorndorf und 30 km Umgebung",
+            "openingHoursSpecification": {
+              "@type": "OpeningHoursSpecification",
+              "dayOfWeek": ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"],
+              "opens": "09:00",
+              "closes": "17:00"
+            },
+            "parentOrganization": { "@id": "https://kusiprimetec.de/#organization" }
+          },
+          {
+            "@type": "WebSite",
+            "@id": "https://kusiprimetec.de/#website",
+            "url": "https://kusiprimetec.de/",
+            "name": "KusiPrimeTec",
+            "inLanguage": "de-DE",
+            "publisher": { "@id": "https://kusiprimetec.de/#organization" }
+          }
         ]
       }
     </script>

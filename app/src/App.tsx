@@ -18,6 +18,7 @@ import {
 } from "@/lib/adminAuth";
 import { initGoogleTag, trackGooglePageView, updateGoogleTagConsent } from "@/lib/googleTag";
 import { getAnalyticsConsent, subscribeAnalyticsConsent } from "@/lib/consent";
+import { useSeo } from "@/hooks/useSeo";
 
 const LeistungenPage = lazy(loadPublicRoute("/leistungen"));
 const HausmeisterservicePage = lazy(loadPublicRoute("/hausmeisterservice"));
@@ -47,6 +48,12 @@ const AdminSettingsPage = lazy(loadAdminRoute("/admin/einstellungen"));
 const AdminCustomersPage = lazy(loadAdminRoute("/admin/kunden"));
 const AdminInteressentenPage = lazy(loadAdminRoute("/admin/interessenten"));
 const AdminReportDocumentPage = lazy(loadAdminReportDocumentRoute);
+
+function RouteMetadata() {
+  const location = useLocation();
+  useSeo({ pathname: location.pathname });
+  return null;
+}
 
 function PublicTracking() {
   const location = useLocation();
@@ -271,8 +278,10 @@ function AdminShell() {
 
 export default function App() {
   return (
-    <Routes>
-      <Route element={<PublicShell />}>
+    <>
+      <RouteMetadata />
+      <Routes>
+        <Route element={<PublicShell />}>
         <Route path="/" element={<HomePage />} />
         <Route path="/leistungen" element={<LazyRoute><LeistungenPage /></LazyRoute>} />
         <Route path="/hausmeisterservice" element={<LazyRoute><HausmeisterservicePage /></LazyRoute>} />
@@ -290,10 +299,10 @@ export default function App() {
         <Route path="/agb" element={<LazyRoute><AgbPage /></LazyRoute>} />
         <Route path="/widerruf" element={<LazyRoute><WiderrufPage /></LazyRoute>} />
         <Route path="/haftung-koordination" element={<LazyRoute><HaftungKoordinationPage /></LazyRoute>} />
-      </Route>
+        </Route>
 
-      <Route path="/admin/login" element={<LazyRoute><AdminLoginPage /></LazyRoute>} />
-      <Route path="/admin" element={<AdminShell />}>
+        <Route path="/admin/login" element={<LazyRoute><AdminLoginPage /></LazyRoute>} />
+        <Route path="/admin" element={<AdminShell />}>
         <Route index element={<LazyRoute><AdminDashboardPage /></LazyRoute>} />
         <Route path="inbox" element={<LazyRoute><AdminInboxPage /></LazyRoute>} />
         <Route path="tickets" element={<LazyRoute><AdminTicketsPage /></LazyRoute>} />
@@ -306,9 +315,10 @@ export default function App() {
         <Route path="docs/report/:id" element={<LazyRoute><AdminReportDocumentPage /></LazyRoute>} />
         <Route path="analytics" element={<LazyRoute><AdminAnalyticsPage /></LazyRoute>} />
         <Route path="einstellungen" element={<LazyRoute><AdminSettingsPage /></LazyRoute>} />
-      </Route>
+        </Route>
 
-      <Route path="*" element={<NotFoundPage />} />
-    </Routes>
+        <Route path="*" element={<NotFoundPage />} />
+      </Routes>
+    </>
   );
 }
