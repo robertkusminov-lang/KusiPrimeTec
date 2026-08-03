@@ -14,8 +14,8 @@ if (-not $functions -or $functions.Count -eq 0) {
 }
 
 foreach ($fn in $functions) {
-  Write-Host "Deploying $fn with --no-verify-jwt"
-  npx supabase functions deploy $fn --no-verify-jwt
+  Write-Host "Deploying $fn with its explicit supabase.toml configuration"
+  npx supabase functions deploy $fn
 }
 
 Write-Host "Functions deployment completed."

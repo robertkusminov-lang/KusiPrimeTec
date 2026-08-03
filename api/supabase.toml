@@ -1,6 +1,71 @@
 project_id = "kusiprimetec"
 
-[functions]
+[functions.admin-agent-message-ack]
 verify_jwt = false
 
+[functions.admin-analytics]
+verify_jwt = false
+
+[functions.admin-dashboard]
+verify_jwt = false
+
+[functions.admin-object-actions]
+verify_jwt = false
+
+[functions.admin-ticket-detail]
+verify_jwt = false
+
+[functions.admin-tickets]
+verify_jwt = false
+
+[functions.admin-ticket-update]
+verify_jwt = false
+
+[functions.admin-whoami]
+verify_jwt = false
+
+[functions.booking-unavailable-dates]
+verify_jwt = false
+
+[functions.create-objectbetreuung-inquiry]
+verify_jwt = false
+
+[functions.create-ticket]
+verify_jwt = false
+
+[functions.customer-profile-upsert]
+verify_jwt = false
+
+[functions.customer-reports]
+verify_jwt = false
+
+[functions.documents-create]
+verify_jwt = false
+
+[functions.documents-send-mail]
+verify_jwt = false
+
+[functions.graph-connect]
+verify_jwt = false
+
+[functions.graph-disconnect]
+verify_jwt = false
+
+[functions.graph-oauth-callback]
+verify_jwt = false
+
+[functions.graph-send-mail]
+verify_jwt = false
+
+[functions.graph-status]
+verify_jwt = false
+
+[functions.graph-sync-calendar]
+verify_jwt = false
+
+[functions.inbound-mail-webhook]
+verify_jwt = false
+
+[functions.ops-agent-run]
+verify_jwt = false
 
