@@ -113,6 +113,19 @@ export default function LeistungenPage() {
         </article>
       </LazySection>
 
+      <section className="premium-card page-card" aria-labelledby="service-qualifications-heading">
+        <p className="text-xs uppercase tracking-[0.12em] text-electric-300">Fachkompetenz</p>
+        <h2 id="service-qualifications-heading" className="mt-2 text-xl font-semibold text-white md:text-2xl">
+          Fachliche Grundlage unserer Leistungen
+        </h2>
+        <p className="mt-3 max-w-5xl text-sm leading-relaxed text-[var(--text-soft)] md:text-base">
+          Die technische Betreuung erfolgt auf Grundlage einer abgeschlossenen Berufsausbildung als Elektroniker für
+          Energie- und Gebäudetechnik, elf absolvierter ETZ-Lehrgänge sowie mehrjähriger praktischer Erfahrung im
+          technischen Gebäudeservice. Arbeiten außerhalb des zulässigen Leistungsrahmens werden an entsprechend
+          qualifizierte Fachbetriebe übergeben oder durch diese ausgeführt.
+        </p>
+      </section>
+
       <LazySection className="space-y-5" minHeight={520} delayMs={110}>
         <header>
           <p className="text-xs uppercase tracking-[0.12em] text-electric-300">Häufige Fragen</p>

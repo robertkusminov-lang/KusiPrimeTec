@@ -44,6 +44,24 @@ const whyKusiPoints = [
   "Koordination qualifizierter Fachfirmen bei Bedarf",
 ];
 
+const qualificationCards = [
+  {
+    marker: "G",
+    title: "Gesellenabschluss",
+    text: "Abgeschlossene Berufsausbildung als Elektroniker für Energie- und Gebäudetechnik.",
+  },
+  {
+    marker: "11",
+    title: "11 ETZ-Lehrgänge",
+    text: "Überbetriebliche Fachausbildung in Installation und Prüfung, Mess- und Steuerungstechnik, Netzwerken, Gebäudekommunikation und Gebäudesystemtechnik.",
+  },
+  {
+    marker: "P",
+    title: "Praktische Erfahrung",
+    text: "Mehrjährige Erfahrung im technischen Gebäudeservice, in der Instandhaltung, Störungsaufnahme und strukturierten Objektbetreuung.",
+  },
+];
+
 export default function HomePage() {
   useSeo({
     title: "Technischer Immobilienservice & Objektbetreuung | KusiPrimeTec Schorndorf",
@@ -316,6 +334,50 @@ export default function HomePage() {
           </div>
         </div>
       </LazySection>
+
+      <section
+        className="premium-card premium-card-strong page-card-lg"
+        aria-labelledby="qualifications-heading"
+      >
+        <header className="max-w-4xl space-y-3">
+          <p className="text-xs uppercase tracking-[0.12em] text-electric-300">Fachkompetenz</p>
+          <h2 id="qualifications-heading" className="text-2xl font-bold text-white md:text-3xl">
+            Fachlich qualifiziert. Praktisch erfahren.
+          </h2>
+          <p className="text-sm leading-relaxed text-[var(--text-soft)] md:text-base">
+            KusiPrimeTec verbindet technische Objektbetreuung mit fundierter Fachkompetenz. Inhaber Robert Kusminov
+            verfügt über eine abgeschlossene Berufsausbildung als Elektroniker für Energie- und Gebäudetechnik sowie
+            über elf erfolgreich absolvierte ETZ-Lehrgänge im Rahmen der überbetrieblichen Ausbildung.
+          </p>
+        </header>
+
+        <div className="mt-6 grid items-stretch gap-4 md:grid-cols-3">
+          {qualificationCards.map((card) => (
+            <article key={card.title} className="premium-card flex h-full flex-col p-5">
+              <span
+                className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-electric-300/45 bg-electric-400/10 text-sm font-bold text-electric-300"
+                aria-hidden="true"
+              >
+                {card.marker}
+              </span>
+              <h3 className="mt-4 text-lg font-semibold text-white">{card.title}</h3>
+              <p className="mt-2 text-sm leading-relaxed text-[var(--text-soft)]">{card.text}</p>
+            </article>
+          ))}
+        </div>
+
+        <div className="mt-6 flex flex-col gap-4 border-t border-[var(--line)] pt-5 sm:flex-row sm:items-center sm:justify-between">
+          <p className="text-sm text-[var(--text-soft)]">
+            Qualifikationsnachweise stellen wir Geschäftskunden auf Anfrage zur Verfügung.
+          </p>
+          <NavLink
+            to="/buchen"
+            className="btn-primary-premium inline-flex min-h-12 w-full shrink-0 items-center justify-center rounded-full px-5 py-3 text-sm font-semibold sm:w-auto"
+          >
+            Projekt anfragen
+          </NavLink>
+        </div>
+      </section>
 
       <LazySection className="premium-card premium-card-strong relative overflow-hidden p-6 text-center md:p-8" minHeight={190} delayMs={145}>
         <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(60%_80%_at_50%_0%,rgba(56,189,248,.16),transparent_72%)]" />
