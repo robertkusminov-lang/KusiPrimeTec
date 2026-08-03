@@ -9,6 +9,7 @@ import {
 import { useSeo } from "@/hooks/useSeo";
 import { apiPost } from "@/lib/api";
 import { toUserMessage } from "@/lib/errors";
+import { trackGoogleEvent } from "@/lib/googleTag";
 
 type InquiryState = {
   company_name: string;
@@ -126,6 +127,10 @@ export default function ObjektbetreuungAnfragePage() {
         },
       );
       setSuccess({ inquiry_number: String(result.inquiry_number || "") });
+      trackGoogleEvent("lead_form_submit", {
+        form_type: "object_care_inquiry",
+        selection_id: selection || "not_selected",
+      });
       setForm({
         ...INITIAL_STATE,
         desired_support: selection ? INQUIRY_SELECTION_LABELS[selection] : "",

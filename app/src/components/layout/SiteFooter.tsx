@@ -2,6 +2,7 @@
 import { COMPANY_PROFILE } from "@/config/businessRules";
 import { FOOTER_LINKS, NAV_PUBLIC } from "@/data/content";
 import { openConsentSettings } from "@/lib/consent";
+import { trackGoogleEvent } from "@/lib/googleTag";
 
 export function SiteFooter() {
   return (
@@ -52,16 +53,17 @@ export function SiteFooter() {
             <div className="grid gap-2 text-sm text-[var(--text-soft)]">
               <p>Robert Kusminov</p>
               <p>{COMPANY_PROFILE.addressLine}</p>
-              <a href="tel:+491776364393" className="transition-colors duration-200 hover:text-white">Telefon: 0177 6364393</a>
+              <a href="tel:+491776364393" onClick={() => trackGoogleEvent("contact_phone_click", { placement: "footer" })} className="transition-colors duration-200 hover:text-white">Telefon: 0177 6364393</a>
               <a
                 href="https://wa.me/491776364393?text=Hallo%20KusiPrimeTec%2C%20ich%20habe%20eine%20Anfrage."
                 target="_blank"
                 rel="noopener noreferrer"
+                onClick={() => trackGoogleEvent("whatsapp_click", { placement: "footer" })}
                 className="transition-colors duration-200 hover:text-white"
               >
                 WhatsApp: Direkt-Chat öffnen
               </a>
-              <a href="mailto:info@kusiprimetec.de" className="transition-colors duration-200 hover:text-white">E-Mail: info@kusiprimetec.de</a>
+              <a href="mailto:info@kusiprimetec.de" onClick={() => trackGoogleEvent("contact_email_click", { placement: "footer" })} className="transition-colors duration-200 hover:text-white">E-Mail: info@kusiprimetec.de</a>
               <p>{COMPANY_PROFILE.serviceRadiusLine}</p>
             </div>
           </section>

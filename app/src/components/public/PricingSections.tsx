@@ -7,6 +7,7 @@ import {
   type CarePackage,
 } from "@/config/publicServices";
 import { eur } from "@/lib/format";
+import { trackGoogleEvent } from "@/lib/googleTag";
 
 const comparisonRows: Array<{
   label: string;
@@ -55,6 +56,7 @@ export function ServicePricingCards({ compact = false }: { compact?: boolean }) 
           ) : null}
           <NavLink
             to={inquiryHref(service.id)}
+            onClick={() => trackGoogleEvent("service_inquiry_click", { service_id: service.id })}
             className="btn-primary-premium mt-5 inline-flex min-h-12 w-full items-center justify-center rounded-full px-5 py-3 text-center text-sm font-semibold sm:w-fit"
           >
             {service.cta}
@@ -103,6 +105,7 @@ function PackageCard({ pkg, compact }: { pkg: CarePackage; compact: boolean }) {
       </ul>
       <NavLink
         to={inquiryHref(pkg.id)}
+        onClick={() => trackGoogleEvent("care_package_click", { package_id: pkg.id })}
         className={`${highlighted ? "btn-primary-premium" : "btn-secondary-premium"} mt-5 inline-flex min-h-12 w-full items-center justify-center rounded-full px-4 py-3 text-center text-sm font-semibold`}
       >
         {pkg.cta}

@@ -24,8 +24,9 @@ export function SiteLayout({ children }: PropsWithChildren) {
 
   return (
     <div className="premium-shell min-h-screen">
+      <a href="#main-content" className="skip-link">Zum Hauptinhalt springen</a>
       <SiteHeader />
-      <main className="site-frame py-[clamp(2rem,4vw,3rem)] pb-24 md:pb-12">{children}</main>
+      <main id="main-content" tabIndex={-1} className="site-frame py-[clamp(2rem,4vw,3rem)] pb-24 md:pb-12">{children}</main>
       <SiteFooter />
       <ConsentBanner />
 

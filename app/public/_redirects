@@ -3,4 +3,7 @@ https://www.kusiprimetec.de/* https://kusiprimetec.de/:splat 301!
 http://kusiprimetec.de/* https://kusiprimetec.de/:splat 301!
 
 /api/* https://pbcqceddxjmhiwzfydvl.supabase.co/functions/v1/:splat 200
+/objektcheck /objektbetreuung 301
+/referenzen / 301
+/ueber-kusiprimetec / 301
 /* /index.html 200

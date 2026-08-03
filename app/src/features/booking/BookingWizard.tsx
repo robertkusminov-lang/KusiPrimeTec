@@ -10,6 +10,7 @@ import { apiGet } from "@/lib/api";
 import { normalizeCustomerType, resolveInvoiceRecipientName } from "@/lib/customer";
 import { anfrageartToRequestType } from "@/lib/requestType";
 import { toUserMessage } from "@/lib/errors";
+import { trackGoogleEvent } from "@/lib/googleTag";
 import { TicketWizardPayload } from "@/types/domain";
 import { fileToBase64, MAX_UPLOAD_FILES, useUploadState, validateTicketFiles } from "./upload";
 import { createTicketSubmissionGuard } from "./submissionGuard";
@@ -693,6 +694,10 @@ export function BookingWizard({ initialAnfrageart = "direkt_einsatz", profilePre
       const result = await createTicket(payload);
       submitted = true;
       setSuccess({ ticket_nummer: result.ticket_nummer });
+      trackGoogleEvent("lead_form_submit", {
+        form_type: "ticket_request",
+        request_type: anfrageartToRequestType(form.anfrageart),
+      });
       setForm({
         ...initialState,
         anfrageart: initialAnfrageart,

@@ -1,4 +1,5 @@
 import { ENV } from "@/lib/env";
+import { getAnalyticsConsent } from "@/lib/consent";
 
 declare global {
   interface Window {
@@ -69,5 +70,27 @@ export function trackGooglePageView(path: string) {
       send_to: tagId,
     });
   });
+}
+
+type GoogleEventValue = string | number | boolean;
+
+export function trackGoogleEvent(eventName: string, parameters: Record<string, GoogleEventValue> = {}) {
+  if (
+    !/^[a-z][a-z0-9_]{1,39}$/.test(eventName) ||
+    getAnalyticsConsent() !== "granted" ||
+    typeof window === "undefined" ||
+    typeof window.gtag !== "function"
+  ) {
+    return;
+  }
+
+  ENV.googleTagIds
+    .filter((tagId) => tagId.startsWith("G-"))
+    .forEach((tagId) => {
+      window.gtag?.("event", eventName, {
+        ...parameters,
+        send_to: tagId,
+      });
+    });
 }
 
