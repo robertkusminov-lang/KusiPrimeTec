@@ -34,4 +34,17 @@ describe("Supabase security guardrails", () => {
     expect(migration).toContain("security_invoker = true");
     expect(migration).toContain("revoke all on table public.%I from anon");
   });
+
+  it("uses a non-definer admin predicate with non-recursive self-read policies", () => {
+    const migration = readFileSync(
+      repoFile("api/supabase/migrations/20260803150000_finalize_supabase_security_advisors.sql"),
+      "utf8",
+    );
+
+    expect(migration).toContain("security invoker");
+    expect(migration).toContain("create policy admin_users_self_read");
+    expect(migration).toContain("create policy allowed_admins_self_read");
+    expect(migration).toContain("drop policy if exists customers_self_update");
+    expect(migration).not.toContain("with check (true)");
+  });
 });
