@@ -9,6 +9,18 @@ declare global {
 
 let initialized = false;
 
+export function updateGoogleTagConsent(granted: boolean) {
+  if (typeof window === "undefined" || typeof window.gtag !== "function") return;
+
+  const consent = granted ? "granted" : "denied";
+  window.gtag("consent", "update", {
+    ad_storage: consent,
+    ad_user_data: consent,
+    ad_personalization: consent,
+    analytics_storage: consent,
+  });
+}
+
 function ensureGtagScript(tagId: string) {
   const existing = document.querySelector<HTMLScriptElement>(
     'script[data-kpt-gtag], script[src^="https://www.googletagmanager.com/gtag/js"]',
@@ -26,6 +38,7 @@ export function initGoogleTag() {
   const tagIds = ENV.googleTagIds;
   if (!tagIds.length || initialized || typeof window === "undefined") return;
 
+  const gtagAlreadyAvailable = typeof window.gtag === "function";
   ensureGtagScript(tagIds[0]);
 
   window.dataLayer = window.dataLayer || [];
@@ -35,7 +48,8 @@ export function initGoogleTag() {
       window.dataLayer.push(args);
     };
 
-  window.gtag("js", new Date());
+  if (!gtagAlreadyAvailable) window.gtag("js", new Date());
+  updateGoogleTagConsent(true);
   tagIds.forEach((tagId) => {
     window.gtag?.("config", tagId, { anonymize_ip: true, send_page_view: false });
   });

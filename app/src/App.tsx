@@ -16,7 +16,7 @@ import {
   isStoredAdminSessionValid,
   saveStoredAdminSession,
 } from "@/lib/adminAuth";
-import { initGoogleTag, trackGooglePageView } from "@/lib/googleTag";
+import { initGoogleTag, trackGooglePageView, updateGoogleTagConsent } from "@/lib/googleTag";
 import { getAnalyticsConsent, subscribeAnalyticsConsent } from "@/lib/consent";
 
 const LeistungenPage = lazy(loadPublicRoute("/leistungen"));
@@ -54,7 +54,9 @@ function PublicTracking() {
 
   useEffect(() => {
     return subscribeAnalyticsConsent((value) => {
-      setTrackingEnabled(value === "granted");
+      const granted = value === "granted";
+      updateGoogleTagConsent(granted);
+      setTrackingEnabled(granted);
     });
   }, []);
 

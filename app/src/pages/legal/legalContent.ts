@@ -94,14 +94,15 @@ export const legalContent = {
         paragraphs: [
           "Wir setzen technisch notwendige Endgerätezugriffe ein, damit die Website und der Admin-Bereich funktionieren, zum Beispiel localStorage oder sessionStorage für Sitzungsverwaltung und technische Einstellungen.",
           "Rechtsgrundlage für notwendige Endgerätezugriffe ist Paragraf 25 Abs. 2 Nr. 2 TDDDG. Rechtsgrundlage für die anschließende Datenverarbeitung ist Art. 6 Abs. 1 lit. b und lit. f DSGVO.",
-          "Optionale Analyse-Technologien wie der Google Tag werden erst nach aktiver Einwilligung geladen. Rechtsgrundlage ist Art. 6 Abs. 1 lit. a DSGVO in Verbindung mit Paragraf 25 Abs. 1 TDDDG.",
+          "Der Google Tag wird mit standardm\u00e4\u00dfig verweigertem Einwilligungsstatus geladen. Analyse-Speicher, Werbe-Speicher und personalisierte Messung werden erst nach aktiver Einwilligung freigegeben. Rechtsgrundlage ist Art. 6 Abs. 1 lit. a DSGVO in Verbindung mit Paragraf 25 Abs. 1 TDDDG.",
           "Ihre Einwilligung können Sie jederzeit über die Cookie-Einstellungen im Footer mit Wirkung für die Zukunft ändern oder widerrufen.",
         ],
       },
       {
         heading: "Google Tag und Webanalyse",
         paragraphs: [
-          "Bei erteilter Einwilligung wird der Google Tag geladen, um Seitenaufrufe und Nutzungsdaten zur Reichweitenanalyse zu verarbeiten.",
+          "Vor Ihrer Auswahl sind die Einwilligungssignale f\u00fcr Analyse und Werbung standardm\u00e4\u00dfig auf verweigert gesetzt. Google kann dabei cookielose technische Signale zum Einwilligungsstatus verarbeiten.",
+          "Erst bei erteilter Einwilligung werden Seitenaufrufe und Nutzungsdaten zur Reichweitenanalyse verarbeitet sowie die zugeh\u00f6rigen Speicherzugriffe freigegeben.",
           "Dabei können insbesondere IP-Adresse, Seitenaufruf, Browserinformationen, Zeitstempel und Interaktionsdaten an Google übermittelt werden.",
           "Wir verwenden datensparsame Einstellungen, soweit dies technisch möglich ist.",
         ],
