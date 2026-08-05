@@ -1,26 +1,17 @@
-﻿import React from "react";
+import React from "react";
 import { useNavigate, useOutletContext } from "react-router-dom";
-import { KpiCard } from "@/components/ui/KpiCard";
-import { SectionTitle } from "@/components/ui/SectionTitle";
-import { LoadingSpinner } from "@/components/ui/LoadingSpinner";
-import { Skeleton } from "@/components/ui/Skeleton";
-import { GlassCard } from "@/components/ui/GlassCard";
-import { StatusChip } from "@/components/ui/StatusChip";
 import { Button } from "@/components/ui/Button";
+import { GlassCard } from "@/components/ui/GlassCard";
+import { LoadingSpinner } from "@/components/ui/LoadingSpinner";
+import { RequestTypeBadge } from "@/components/ui/RequestTypeBadge";
+import { Skeleton } from "@/components/ui/Skeleton";
+import { StatusChip } from "@/components/ui/StatusChip";
 import { Toast } from "@/components/ui/Toast";
-import {
-  ackAgentMessage,
-  adminDashboard,
-  adminTickets,
-  UpdateTicketPayload,
-  updateTicket,
-} from "@/features/apiClient";
-import { DashboardResponse, Ticket, TicketStatus, TICKET_STATUSES } from "@/types/domain";
+import { ackAgentMessage, adminDashboard, adminTickets } from "@/features/apiClient";
+import { useDebouncedValue } from "@/hooks/useDebouncedValue";
 import { SESSION_EXPIRED_MESSAGE, toUserMessage } from "@/lib/errors";
 import { dateTime, formatTicketNumber, formatTimeRange } from "@/lib/format";
-import { useDebouncedValue } from "@/hooks/useDebouncedValue";
-
-const STATUS_VALUES: TicketStatus[] = [...TICKET_STATUSES];
+import { DashboardResponse, Ticket } from "@/types/domain";
 
 const EMPTY_DASHBOARD: DashboardResponse = {
   kpis: {
@@ -52,41 +43,107 @@ const EMPTY_DASHBOARD: DashboardResponse = {
   },
 };
 
-function urgencyTone(ticket: Ticket): string {
+function customerName(ticket: Ticket): string {
+  return (
+    ticket.customer_display_name ||
+    ticket.invoice_recipient_name ||
+    ticket.kunde_firma ||
+    ticket.kunde_name ||
+    "Nicht angegeben"
+  );
+}
+
+function objectLabel(ticket: Ticket): string {
+  const address = ticket.objekt_adresse || [ticket.plz, ticket.ort].filter(Boolean).join(" ");
+  return address || "Noch kein Objekt hinterlegt";
+}
+
+function urgencyLabel(ticket: Ticket): string {
+  const urgency = String(ticket.dringlichkeit || "mittel").toLowerCase();
+  if (urgency === "kritisch" || urgency === "notfall") return "Kritisch";
+  if (urgency === "hoch") return "Hoch";
+  if (urgency === "niedrig") return "Niedrig";
+  return "Mittel";
+}
+
+function urgencyClass(ticket: Ticket): string {
   const urgency = String(ticket.dringlichkeit || "").toLowerCase();
-  if (urgency === "kritisch" || urgency === "notfall") return "border-rose-300/55 bg-rose-400/15 text-rose-100";
-  if (urgency === "hoch") return "border-amber-300/55 bg-amber-400/15 text-amber-100";
-  return "border-slate-600/65 bg-slate-700/45 text-slate-200";
+  if (urgency === "kritisch" || urgency === "notfall") return "dashboard-urgency-critical";
+  if (urgency === "hoch") return "dashboard-urgency-high";
+  return "dashboard-urgency-normal";
 }
 
-function isUrgent(ticket: Ticket): boolean {
-  const urgency = String(ticket.dringlichkeit || "").toLowerCase();
-  return urgency === "hoch" || urgency === "kritisch" || urgency === "notfall";
-}
-
-function eur(value: number): string {
-  return new Intl.NumberFormat("de-DE", { style: "currency", currency: "EUR" }).format(value || 0);
-}
-
-function formatCompare(value: number, isMoney = false): string {
-  return isMoney ? `Vorperiode ${eur(value)}` : `Vorperiode ${value}`;
-}
-
-function isQuarterHour(value: string): boolean {
-  const raw = String(value || "").trim();
-  const m = raw.match(/^(\d{2}):(\d{2})$/);
-  if (!m) return false;
-  const hh = Number(m[1]);
-  const mm = Number(m[2]);
-  if (!Number.isFinite(hh) || !Number.isFinite(mm) || hh < 0 || hh > 23 || mm < 0 || mm > 59) return false;
-  return mm % 30 === 0;
+function shortDate(value: string | null): string {
+  if (!value) return "Nicht terminiert";
+  const normalized = /^\d{4}-\d{2}-\d{2}$/.test(value) ? `${value}T12:00:00` : value;
+  const date = new Date(normalized);
+  if (Number.isNaN(date.getTime())) return "Nicht terminiert";
+  return new Intl.DateTimeFormat("de-DE", { weekday: "short", day: "2-digit", month: "2-digit" }).format(date);
 }
 
 function appointmentText(ticket: Ticket): string {
-  const date = ticket.terminwunsch || "-";
+  if (!ticket.terminwunsch) return "Nicht terminiert";
   const timeRange = formatTimeRange(ticket.zeitfenster_von, ticket.zeitfenster_bis);
-  if (timeRange !== "-") return `${date} ${timeRange}`;
-  return date;
+  return timeRange === "-" ? shortDate(ticket.terminwunsch) : `${shortDate(ticket.terminwunsch)}, ${timeRange}`;
+}
+
+function isOverdue(ticket: Ticket): boolean {
+  if (!ticket.terminwunsch) return false;
+  const due = new Date(`${ticket.terminwunsch.slice(0, 10)}T23:59:59`);
+  return !Number.isNaN(due.getTime()) && due.getTime() < Date.now();
+}
+
+function Trend({ percent, compare }: { percent: number; compare: number }) {
+  const direction = percent > 0 ? "↗" : percent < 0 ? "↘" : "→";
+  return (
+    <p className="dashboard-stat-trend">
+      <span>{direction} {Math.abs(percent).toFixed(1)} %</span>
+      <span>Vorperiode {compare}</span>
+    </p>
+  );
+}
+
+interface SummaryCardProps {
+  label: string;
+  value: number;
+  hint: string;
+  trend?: { delta_percent: number; compare_value: number };
+  accent: "blue" | "cyan" | "green" | "slate";
+  onClick: () => void;
+}
+
+function SummaryCard({ label, value, hint, trend, accent, onClick }: SummaryCardProps) {
+  return (
+    <button type="button" className={`dashboard-stat dashboard-stat-${accent}`} onClick={onClick}>
+      <span className="dashboard-stat-label">{label}</span>
+      <strong>{value}</strong>
+      <span className="dashboard-stat-hint">{hint}</span>
+      {trend ? <Trend percent={trend.delta_percent} compare={trend.compare_value} /> : null}
+      <span className="dashboard-stat-link">Anzeigen <span aria-hidden="true">→</span></span>
+    </button>
+  );
+}
+
+interface FocusItemProps {
+  label: string;
+  value: number;
+  hint: string;
+  tone: "danger" | "warning" | "info" | "neutral";
+  onClick: () => void;
+}
+
+function FocusItem({ label, value, hint, tone, onClick }: FocusItemProps) {
+  return (
+    <button type="button" className={`dashboard-focus-item dashboard-focus-${tone}`} onClick={onClick}>
+      <span className="dashboard-focus-signal" aria-hidden="true" />
+      <span className="dashboard-focus-copy">
+        <span className="dashboard-focus-label">{label}</span>
+        <span className="dashboard-focus-hint">{hint}</span>
+      </span>
+      <strong>{value}</strong>
+      <span className="dashboard-focus-arrow" aria-hidden="true">›</span>
+    </button>
+  );
 }
 
 export default function AdminDashboardPage() {
@@ -97,20 +154,20 @@ export default function AdminDashboardPage() {
   const [dashboard, setDashboard] = React.useState<DashboardResponse>(EMPTY_DASHBOARD);
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState("");
+  const [lastUpdated, setLastUpdated] = React.useState<Date | null>(null);
+  const [refreshVersion, setRefreshVersion] = React.useState(0);
 
   const [activeTickets, setActiveTickets] = React.useState<{ items: Ticket[]; total: number; page_count: number } | null>(null);
   const [activeLoading, setActiveLoading] = React.useState(true);
   const [activeError, setActiveError] = React.useState("");
   const [ticketQ, setTicketQ] = React.useState("");
-  const debouncedTicketQ = useDebouncedValue(ticketQ, 360);
+  const debouncedTicketQ = useDebouncedValue(ticketQ, 320);
   const [ticketPage, setTicketPage] = React.useState(1);
   const [ticketSort, setTicketSort] = React.useState("due_asc");
-
-  const [pendingMap, setPendingMap] = React.useState<Record<string, boolean>>({});
   const [toast, setToast] = React.useState<{ kind: "ok" | "error"; text: string } | null>(null);
 
   React.useEffect(() => {
-    if (!toast) return;
+    if (!toast) return undefined;
     const id = window.setTimeout(() => setToast(null), 3200);
     return () => window.clearTimeout(id);
   }, [toast]);
@@ -120,69 +177,70 @@ export default function AdminDashboardPage() {
       setError(SESSION_EXPIRED_MESSAGE);
       setLoading(false);
       setActiveLoading(false);
-      return;
+      return undefined;
     }
 
-    let stop = false;
+    let stopped = false;
+    setError("");
     setLoading(true);
     adminDashboard(token)
-      .then((res) => {
-        if (stop) return;
-        setDashboard(res);
+      .then((response) => {
+        if (stopped) return;
+        setDashboard(response);
+        setLastUpdated(new Date());
         setLoading(false);
       })
-      .catch((err) => {
-        if (stop) return;
-        setError(toUserMessage(err, "Dashboard konnte nicht geladen werden."));
+      .catch((reason) => {
+        if (stopped) return;
+        setError(toUserMessage(reason, "Dashboard konnte nicht geladen werden."));
         setLoading(false);
       });
 
     return () => {
-      stop = true;
+      stopped = true;
     };
-  }, [token]);
+  }, [token, refreshVersion]);
 
   React.useEffect(() => {
-    if (!token) return;
-    let stop = false;
+    if (!token) return undefined;
+    let stopped = false;
+    setActiveError("");
     setActiveLoading(true);
     adminTickets(token, {
       q: debouncedTicketQ,
       bucket: "active",
       sort: ticketSort,
       page: String(ticketPage),
-      page_size: "10",
+      page_size: "8",
       hydrate_customers: "0",
     })
-      .then((res) => {
-        if (stop) return;
-        setActiveTickets({ items: res.items, total: res.total, page_count: res.page_count });
+      .then((response) => {
+        if (stopped) return;
+        setActiveTickets({ items: response.items, total: response.total, page_count: response.page_count });
         setActiveLoading(false);
       })
-      .catch((err) => {
-        if (stop) return;
-        setActiveError(toUserMessage(err, "Aktive Tickets konnten nicht geladen werden."));
+      .catch((reason) => {
+        if (stopped) return;
+        setActiveError(toUserMessage(reason, "Aktive Tickets konnten nicht geladen werden."));
         setActiveLoading(false);
       });
-    return () => {
-      stop = true;
-    };
-  }, [token, debouncedTicketQ, ticketSort, ticketPage]);
 
-  const openTickets = dashboard.tickets.filter((ticket) => ticket.status !== "Rapport_erstellt" && ticket.status !== "Storniert");
+    return () => {
+      stopped = true;
+    };
+  }, [token, debouncedTicketQ, ticketSort, ticketPage, refreshVersion]);
+
+  const openTickets = dashboard.tickets.filter(
+    (ticket) => ticket.status !== "Rapport_erstellt" && ticket.status !== "Storniert"
+  );
   const dueToday = openTickets.filter((ticket) => {
     if (!ticket.terminwunsch) return false;
-    const due = new Date(ticket.terminwunsch);
+    const due = new Date(`${ticket.terminwunsch.slice(0, 10)}T12:00:00`);
     const now = new Date();
-    return (
-      due.getFullYear() === now.getFullYear() &&
-      due.getMonth() === now.getMonth() &&
-      due.getDate() === now.getDate()
-    );
+    return due.toDateString() === now.toDateString();
   });
-
   const upcoming = [...openTickets]
-    .filter((ticket) => Boolean(ticket.terminwunsch))
+    .filter((ticket) => Boolean(ticket.terminwunsch) && !isOverdue(ticket))
     .sort((a, b) => new Date(a.terminwunsch || "").getTime() - new Date(b.terminwunsch || "").getTime())
     .slice(0, 4);
 
@@ -191,426 +249,325 @@ export default function AdminDashboardPage() {
     navigate(`/admin/${route}${query ? `?${query}` : ""}`);
   }
 
-  function patchLocalTicket(ticketId: string, patch: Partial<Ticket>) {
-    setActiveTickets((prev) => {
-      if (!prev) return prev;
-      return {
-        ...prev,
-        items: prev.items.map((ticket) => (ticket.id === ticketId ? { ...ticket, ...patch } : ticket)),
-      };
-    });
-    setDashboard((prev) => ({
-      ...prev,
-      tickets: prev.tickets.map((ticket) => (ticket.id === ticketId ? { ...ticket, ...patch } : ticket)),
-    }));
-  }
-
-  async function quickSave(ticket: Ticket, patch: UpdateTicketPayload, success: string) {
-    const rollback = { ...ticket };
-    patchLocalTicket(ticket.id, patch);
-    setPendingMap((prev) => ({ ...prev, [ticket.id]: true }));
-    try {
-      await updateTicket(token, ticket.id, patch);
-      setToast({ kind: "ok", text: success });
-    } catch (err) {
-      patchLocalTicket(ticket.id, rollback);
-      setToast({ kind: "error", text: toUserMessage(err, "Speichern fehlgeschlagen.") });
-    } finally {
-      setPendingMap((prev) => ({ ...prev, [ticket.id]: false }));
-    }
-  }
-
-  async function handleQuickStatus(ticket: Ticket) {
-    const input = window.prompt(
-      "Neuen Status eingeben:\n" + STATUS_VALUES.join(", "),
-      ticket.status
-    );
-    if (!input) return;
-    if (!STATUS_VALUES.includes(input as TicketStatus)) {
-      setToast({ kind: "error", text: "Ungültiger Statuswert." });
-      return;
-    }
-    await quickSave(ticket, { status: input as TicketStatus }, "Status aktualisiert.");
-  }
-
-  async function handleQuickDate(ticket: Ticket) {
-    const dateInput = window.prompt("Termin-Datum im Format JJJJ-MM-TT eingeben:", ticket.terminwunsch || "");
-    if (!dateInput) return;
-    const date = dateInput.trim();
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
-      setToast({ kind: "error", text: "Terminformat ungültig." });
-      return;
-    }
-
-    const fromInput = window.prompt("Zeit von (HH:MM, 30-Minuten-Schritte):", String(ticket.zeitfenster_von || "09:00"));
-    if (fromInput === null) return;
-    const from = fromInput.trim();
-
-    const toInput = window.prompt("Zeit bis (HH:MM, 30-Minuten-Schritte):", String(ticket.zeitfenster_bis || "10:00"));
-    if (toInput === null) return;
-    const to = toInput.trim();
-
-    if (!isQuarterHour(from) || !isQuarterHour(to)) {
-      setToast({ kind: "error", text: "Uhrzeiten müssen in 30-Minuten-Schritten sein." });
-      return;
-    }
-    if (from >= to) {
-      setToast({ kind: "error", text: "Bitte ein gültiges Zeitfenster wählen (von < bis)." });
-      return;
-    }
-
-    await quickSave(ticket, { terminwunsch: date, zeitfenster_von: from, zeitfenster_bis: to }, "Termin gesetzt.");
-  }
-
   async function handleAgentMessageOk(messageId: string) {
     const runId = String(messageId || "").trim();
     if (!runId) return;
     try {
       await ackAgentMessage(token, runId);
-      setDashboard((prev) => ({
-        ...prev,
-        agent_messages: prev.agent_messages.filter((msg) => msg.id !== runId),
+      setDashboard((current) => ({
+        ...current,
+        agent_messages: current.agent_messages.filter((message) => message.id !== runId),
       }));
-      setToast({ kind: "ok", text: "Agent-Nachricht bestätigt." });
-    } catch (err) {
-      setToast({ kind: "error", text: toUserMessage(err, "Nachricht konnte nicht bestätigt werden.") });
+      setToast({ kind: "ok", text: "Hinweis als erledigt markiert." });
+    } catch (reason) {
+      setToast({ kind: "error", text: toUserMessage(reason, "Hinweis konnte nicht bestätigt werden.") });
     }
   }
 
+  const isRefreshing = loading || activeLoading;
+  const pageCount = Math.max(activeTickets?.page_count || 1, 1);
+
   return (
-    <div className="page-enter space-y-4">
-      <SectionTitle title="Dashboard" subtitle="Operatives Leitstand-Panel" />
-
-      {toast ? <Toast kind={toast.kind} text={toast.text} /> : null}
-
-      {error ? <Toast kind="error" text={error} /> : null}
-      {error === SESSION_EXPIRED_MESSAGE ? (
-        <div className="pt-1">
-          <Button variant="secondary" className="px-3 py-1 text-sm" onClick={() => navigate("/admin/login")}>
-            Erneut anmelden
+    <div className="dashboard-page page-enter">
+      <header className="dashboard-hero">
+        <div>
+          <p className="dashboard-eyebrow">Betriebsübersicht</p>
+          <h1>Dashboard</h1>
+          <p>Tickets, Termine und offene Aufgaben in einer klaren Arbeitsansicht.</p>
+        </div>
+        <div className="dashboard-refresh">
+          <span>{lastUpdated ? `Stand ${lastUpdated.toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" })} Uhr` : "Daten werden geladen"}</span>
+          <Button
+            variant="secondary"
+            disabled={isRefreshing}
+            onClick={() => setRefreshVersion((version) => version + 1)}
+          >
+            {isRefreshing ? "Aktualisiert ..." : "Aktualisieren"}
           </Button>
         </div>
+      </header>
+
+      {toast ? <Toast kind={toast.kind} text={toast.text} /> : null}
+      {error ? <Toast kind="error" text={error} /> : null}
+      {error === SESSION_EXPIRED_MESSAGE ? (
+        <Button variant="secondary" onClick={() => navigate("/admin/login")}>Erneut anmelden</Button>
       ) : null}
 
       {loading ? (
-        <div className="space-y-2">
-          <LoadingSpinner label="Dashboard wird geladen..." className="py-1" />
-          <div className="grid gap-3 [grid-template-columns:repeat(auto-fit,minmax(200px,1fr))]">
-            <Skeleton className="h-28" />
-            <Skeleton className="h-28" />
-            <Skeleton className="h-28" />
-            <Skeleton className="h-28" />
+        <section className="dashboard-loading" aria-label="Dashboard wird geladen">
+          <LoadingSpinner label="Dashboard wird geladen ..." />
+          <div className="dashboard-summary-grid">
+            {[0, 1, 2, 3].map((item) => <Skeleton key={item} className="h-44" />)}
           </div>
-        </div>
+        </section>
       ) : (
         <>
-          <div className="grid gap-3 [grid-template-columns:repeat(auto-fit,minmax(220px,1fr))]">
-            <KpiCard
-              label="Neue Tickets (7 Tage)"
-              value={String(dashboard.kpis.neue_tickets)}
-              trendPercent={dashboard.trends.neue_tickets.delta_percent}
-              compareText={formatCompare(dashboard.trends.neue_tickets.compare_value)}
-              hint="inkl. neue Eingänge"
-              bright
-              onClick={() => goTickets({}, "inbox")}
-            />
-            <KpiCard
-              label="Offene Tickets"
-              value={String(dashboard.kpis.offene_tickets)}
-              trendPercent={dashboard.trends.offene_tickets.delta_percent}
-              compareText={formatCompare(dashboard.trends.offene_tickets.compare_value)}
-              hint="alle aktiven Vorgänge"
-              bright
-              onClick={() => goTickets({})}
-            />
-            <KpiCard
-              label="Termine (7 Tage)"
-              value={String(dashboard.kpis.termine_7_tage)}
-              trendPercent={dashboard.trends.termine_7_tage.delta_percent}
-              compareText={formatCompare(dashboard.trends.termine_7_tage.compare_value)}
-              hint="anstehende Einsätze"
-              bright
-              onClick={() => goTickets({ sort: "due_asc" })}
-            />
-            <KpiCard
-              label="ObjektBetreuung-Anfragen"
-              value={String(dashboard.kpis.objektbetreuung_anfragen)}
-              hint="offene Interessentenfälle"
-              bright
-              onClick={() => navigate("/admin/interessenten")}
-            />
-          </div>
+          <section aria-labelledby="dashboard-summary-heading">
+            <div className="dashboard-section-heading">
+              <div>
+                <p className="dashboard-section-kicker">Auf einen Blick</p>
+                <h2 id="dashboard-summary-heading">Aktuelle Geschäftslage</h2>
+              </div>
+              <p>Alle Kennzahlen führen direkt zur passenden Arbeitsliste.</p>
+            </div>
+            <div className="dashboard-summary-grid">
+              <SummaryCard
+                label="Neue Tickets"
+                value={dashboard.kpis.neue_tickets}
+                hint="Eingänge der letzten 7 Tage"
+                trend={dashboard.trends.neue_tickets}
+                accent="blue"
+                onClick={() => goTickets({}, "inbox")}
+              />
+              <SummaryCard
+                label="Offene Tickets"
+                value={dashboard.kpis.offene_tickets}
+                hint="Aktuell in Bearbeitung"
+                trend={dashboard.trends.offene_tickets}
+                accent="cyan"
+                onClick={() => goTickets({})}
+              />
+              <SummaryCard
+                label="Termine"
+                value={dashboard.kpis.termine_7_tage}
+                hint="Geplant in den nächsten 7 Tagen"
+                trend={dashboard.trends.termine_7_tage}
+                accent="green"
+                onClick={() => goTickets({ sort: "due_asc" })}
+              />
+              <SummaryCard
+                label="ObjektBetreuung"
+                value={dashboard.kpis.objektbetreuung_anfragen}
+                hint="Offene Interessentenanfragen"
+                accent="slate"
+                onClick={() => navigate("/admin/interessenten")}
+              />
+            </div>
+          </section>
 
-          <div className="grid gap-3 xl:grid-cols-[minmax(0,1fr)_minmax(320px,360px)]">
-            <GlassCard className="p-4">
-              <div className="mb-2 flex items-center justify-between">
-                <div>
-                  <h2 className="text-base font-semibold text-white">ObjektBetreuung-Anfragen</h2>
-                  <p className="text-xs text-[var(--text-soft)]">Interessenten, Wiedervorlagen und letzte Anfrage</p>
-                </div>
-                <Button variant="secondary" className="px-3 py-1 text-xs" onClick={() => navigate("/admin/interessenten")}>
-                  Öffnen
-                </Button>
+          <section className="dashboard-focus" aria-labelledby="dashboard-focus-heading">
+            <div className="dashboard-focus-head">
+              <div>
+                <p className="dashboard-section-kicker">Handlungsbedarf</p>
+                <h2 id="dashboard-focus-heading">Was jetzt Aufmerksamkeit braucht</h2>
               </div>
-              <div className="grid gap-3 [grid-template-columns:repeat(auto-fit,minmax(180px,1fr))]">
-                <div className="rounded-xl border border-[var(--line)] bg-slate-950/35 px-3 py-3">
-                  <p className="text-[11px] uppercase tracking-[0.12em] text-[var(--text-soft)]">Offen</p>
-                  <p className="mt-2 text-2xl font-bold text-white">{dashboard.inquiry_summary.total_open}</p>
-                </div>
-                <div className="rounded-xl border border-[var(--line)] bg-slate-950/35 px-3 py-3">
-                  <p className="text-[11px] uppercase tracking-[0.12em] text-[var(--text-soft)]">Wiedervorlage fällig</p>
-                  <p className="mt-2 text-2xl font-bold text-white">{dashboard.inquiry_summary.follow_up_due}</p>
-                </div>
-                <div className="rounded-xl border border-[var(--line)] bg-slate-950/35 px-3 py-3">
-                  <p className="text-[11px] uppercase tracking-[0.12em] text-[var(--text-soft)]">Letzte Anfrage</p>
-                  <p className="mt-2 text-sm font-semibold text-white">
-                    {dashboard.inquiry_summary.latest_requested_at ? dateTime(dashboard.inquiry_summary.latest_requested_at) : "-"}
-                  </p>
-                </div>
-              </div>
-            </GlassCard>
-
-            <GlassCard className="p-4">
-              <div className="mb-2 flex items-center justify-between">
-                <h2 className="text-base font-semibold text-white">Agent-Nachrichten</h2>
-                <span className="text-xs text-[var(--text-soft)]">Neue Hinweise aus der Verarbeitung</span>
-              </div>
-              <div className="space-y-2">
-                {dashboard.agent_messages.slice(0, 12).map((msg) => (
-                  <div key={msg.id} className="rounded-xl border border-[var(--line)] bg-slate-950/35 px-3 py-2">
-                    <p className="text-sm text-white">{msg.message}</p>
-                    <div className="mt-1 flex flex-wrap items-center justify-between gap-2 text-[11px] text-[var(--text-soft)]">
-                      <span>
-                        {msg.intent} · Risiko {msg.risk_level} · {dateTime(msg.created_at)}
-                      </span>
-                      <div className="flex items-center gap-2">
-                        {msg.ticket_id ? (
-                          <Button
-                            variant="ghost"
-                            className="px-2 py-1 text-[11px]"
-                            onClick={() => navigate(`/admin/tickets/${msg.ticket_id}`)}
-                          >
-                            Ticket
-                          </Button>
-                        ) : null}
-                        <Button
-                          variant="secondary"
-                          className="px-2 py-1 text-[11px]"
-                          onClick={() => {
-                            void handleAgentMessageOk(msg.id);
-                          }}
-                        >
-                          OK
-                        </Button>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-                {!dashboard.agent_messages.length ? (
-                  <p className="text-sm text-[var(--text-soft)]">Keine neuen Agent-Nachrichten vorhanden.</p>
-                ) : null}
-              </div>
-            </GlassCard>
-          </div>
-
+              <span>Priorisiert nach Dringlichkeit</span>
+            </div>
+            <div className="dashboard-focus-grid">
+              <FocusItem label="Dringend / Notfall" value={dashboard.kpis.hoch_notfall} hint="Priorisiert bearbeiten" tone="danger" onClick={() => goTickets({ urgency: "hoch_notfall", sort: "priority_desc" })} />
+              <FocusItem label="Heute fällig" value={dashboard.kpis.heute_faellig} hint="Termine für heute" tone="warning" onClick={() => goTickets({ due_today: "1", sort: "due_asc" })} />
+              <FocusItem label="Ohne Termin" value={dashboard.kpis.ohne_termin} hint="Einsatz noch einplanen" tone="info" onClick={() => goTickets({ without_schedule: "1" })} />
+              <FocusItem label="Neue Eingänge" value={dashboard.kpis.inbox_neu} hint="Noch nicht angenommen" tone="neutral" onClick={() => goTickets({}, "inbox")} />
+            </div>
+          </section>
         </>
       )}
 
-      <GlassCard className="p-4">
-        <div className="flex flex-wrap items-center justify-between gap-2">
-          <h2 className="text-base font-semibold text-white">Aktive Tickets</h2>
-          <div className="flex flex-wrap items-center gap-2">
-            <input
-              className="premium-input w-full px-3 py-2 text-sm sm:w-64"
-              placeholder="Suche Ticket, Kunde, Ort"
-              value={ticketQ}
-              onChange={(event) => {
-                setTicketQ(event.target.value);
-                setTicketPage(1);
-              }}
-            />
-            <select
-              className="premium-input px-3 py-2 text-sm"
-              value={ticketSort}
-              onChange={(event) => {
-                setTicketSort(event.target.value);
-                setTicketPage(1);
-              }}
-            >
-              <option value="due_asc">Termin als nächstes</option>
-              <option value="created_desc">Neueste zuerst</option>
-              <option value="priority_desc">Dringlichkeit zuerst</option>
-            </select>
-          </div>
-        </div>
-
-        {activeError ? <Toast kind="error" text={activeError} className="mt-2" /> : null}
-
-        {activeLoading ? (
-          <div className="mt-3 space-y-2">
-            <LoadingSpinner label="Aktive Tickets werden geladen..." />
-            <div className="grid gap-2">
-              <Skeleton className="h-16" />
-              <Skeleton className="h-16" />
-              <Skeleton className="h-16" />
+      <div className="dashboard-workspace">
+        <GlassCard className="dashboard-ticket-panel">
+          <div className="dashboard-panel-head">
+            <div>
+              <p className="dashboard-section-kicker">Arbeitsliste</p>
+              <h2>Aktive Tickets</h2>
+              <p>{activeTickets?.total || 0} offene Vorgänge, sortiert für die tägliche Bearbeitung.</p>
             </div>
+            <Button variant="secondary" onClick={() => navigate("/admin/tickets")}>Alle Tickets</Button>
           </div>
-        ) : (
-          <div className="mt-3 space-y-2">
-            {(activeTickets?.items || []).map((ticket) => (
-              <div
-                key={ticket.id}
-                role="button"
-                tabIndex={0}
-                className="group w-full rounded-xl border border-[var(--line)] bg-slate-950/35 px-3 py-3 text-left transition-all duration-180 hover:-translate-y-[1px] hover:border-electric-300/45 hover:bg-slate-900/55"
-                onClick={() => navigate(`/admin/tickets/${ticket.id}`)}
-                onKeyDown={(event) => {
-                  if (event.key === "Enter" || event.key === " ") {
-                    event.preventDefault();
-                    navigate(`/admin/tickets/${ticket.id}`);
-                  }
+
+          <div className="dashboard-ticket-tools">
+            <label>
+              <span className="sr-only">Aktive Tickets durchsuchen</span>
+              <input
+                className="premium-input"
+                type="search"
+                placeholder="Ticket, Kunde oder Ort suchen"
+                value={ticketQ}
+                onChange={(event) => {
+                  setTicketQ(event.target.value);
+                  setTicketPage(1);
+                }}
+              />
+            </label>
+            <label>
+              <span className="sr-only">Aktive Tickets sortieren</span>
+              <select
+                className="premium-input"
+                value={ticketSort}
+                onChange={(event) => {
+                  setTicketSort(event.target.value);
+                  setTicketPage(1);
                 }}
               >
-                <div className="flex flex-wrap items-start justify-between gap-3">
-                  <div className="space-y-1">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <p className="text-sm font-semibold text-white">{formatTicketNumber(ticket.ticket_nummer)}</p>
+                <option value="due_asc">Nächster Termin</option>
+                <option value="priority_desc">Höchste Dringlichkeit</option>
+                <option value="created_desc">Neueste zuerst</option>
+              </select>
+            </label>
+          </div>
+
+          {activeError ? <Toast kind="error" text={activeError} /> : null}
+          {activeLoading ? (
+            <div className="dashboard-ticket-loading">
+              <LoadingSpinner label="Aktive Tickets werden geladen ..." />
+              {[0, 1, 2].map((item) => <Skeleton key={item} className="h-28" />)}
+            </div>
+          ) : (
+            <div className="dashboard-ticket-list">
+              {(activeTickets?.items || []).map((ticket) => (
+                <article key={ticket.id} className="dashboard-ticket-row">
+                  <button className="dashboard-ticket-main" type="button" onClick={() => navigate(`/admin/tickets/${ticket.id}`)}>
+                    <span className="dashboard-ticket-topline">
+                      <strong>{formatTicketNumber(ticket.ticket_nummer)}</strong>
                       <StatusChip status={ticket.status} />
-                      {isUrgent(ticket) ? (
-                        <span className={`rounded-full border px-2 py-1 text-[11px] ${urgencyTone(ticket)}`}>
-                          {ticket.dringlichkeit}
-                        </span>
-                      ) : null}
-                    </div>
-                    <p className="text-xs text-[var(--text-soft)]">
-                      {ticket.kategorie} · {ticket.plz} {ticket.ort}
-                    </p>
-                    <p className="text-xs text-[var(--text-soft)]">
-                      Erstellt: {dateTime(ticket.created_at)} · Termin: {appointmentText(ticket)}
-                    </p>
+                    </span>
+                    <span className="dashboard-ticket-title">{ticket.titel || ticket.beschreibung || ticket.kategorie}</span>
+                    <span className="dashboard-ticket-category">
+                      <RequestTypeBadge value={ticket.request_type || ticket.anfrageart} />
+                      <span>{ticket.kategorie}</span>
+                    </span>
+                  </button>
+
+                  <div className="dashboard-ticket-detail">
+                    <span className="dashboard-ticket-detail-label">Kunde / Objekt</span>
+                    <strong>{customerName(ticket)}</strong>
+                    <span>{objectLabel(ticket)}</span>
                   </div>
 
-                  <div className="flex flex-wrap items-center gap-2 opacity-100 transition-opacity duration-180 md:opacity-0 md:group-hover:opacity-100">
-                    <Button
-                      variant="ghost"
-                      className="px-3 py-1.5 text-xs"
-                      disabled={Boolean(pendingMap[ticket.id])}
-                      onClick={(event) => {
-                        event.stopPropagation();
-                        void handleQuickStatus(ticket);
-                      }}
-                    >
-                      Status ändern
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      className="px-3 py-1.5 text-xs"
-                      disabled={Boolean(pendingMap[ticket.id])}
-                      onClick={(event) => {
-                        event.stopPropagation();
-                        void handleQuickDate(ticket);
-                      }}
-                    >
-                      Termin setzen
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      className="px-3 py-1.5 text-xs"
-                      onClick={(event) => {
-                        event.stopPropagation();
-                        navigate(`/admin/tickets/${ticket.id}`);
-                      }}
-                    >
-                      Öffnen
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      className="px-3 py-1.5 text-xs"
-                      onClick={(event) => {
-                        event.stopPropagation();
-                        window.location.href = `mailto:${ticket.kunde_email}?subject=${encodeURIComponent(`Ticket ${formatTicketNumber(ticket.ticket_nummer)}`)}`;
-                      }}
-                    >
-                      Mail senden
-                    </Button>
+                  <div className="dashboard-ticket-detail">
+                    <span className="dashboard-ticket-detail-label">Priorität</span>
+                    <span className={`dashboard-urgency ${urgencyClass(ticket)}`}>{urgencyLabel(ticket)}</span>
+                    <span>Erstellt {shortDate(ticket.created_at)}</span>
                   </div>
+
+                  <div className="dashboard-ticket-detail">
+                    <span className="dashboard-ticket-detail-label">Termin</span>
+                    <strong className={isOverdue(ticket) ? "dashboard-overdue" : ""}>{appointmentText(ticket)}</strong>
+                    {isOverdue(ticket) ? <span className="dashboard-overdue">Überfällig</span> : <span>{ticket.ort || "Ort offen"}</span>}
+                  </div>
+
+                  <Button variant="secondary" className="dashboard-ticket-open" onClick={() => navigate(`/admin/tickets/${ticket.id}`)}>
+                    Öffnen
+                  </Button>
+                </article>
+              ))}
+              {!activeTickets?.items.length ? (
+                <div className="dashboard-empty">
+                  <strong>Keine passenden Tickets</strong>
+                  <span>Für diese Suche oder Sortierung wurden keine aktiven Vorgänge gefunden.</span>
                 </div>
+              ) : null}
+            </div>
+          )}
+
+          <footer className="dashboard-pagination">
+            <span>Seite {ticketPage} von {pageCount}</span>
+            <div>
+              <Button variant="secondary" disabled={ticketPage <= 1} onClick={() => setTicketPage((page) => page - 1)}>Zurück</Button>
+              <Button variant="secondary" disabled={ticketPage >= pageCount} onClick={() => setTicketPage((page) => page + 1)}>Weiter</Button>
+            </div>
+          </footer>
+        </GlassCard>
+
+        <aside className="dashboard-side-column" aria-label="Termine und Hinweise">
+          <GlassCard className="dashboard-side-card">
+            <div className="dashboard-side-head">
+              <div>
+                <p className="dashboard-section-kicker">Einsatzplanung</p>
+                <h2>Heute & als Nächstes</h2>
               </div>
-            ))}
-            {!activeTickets?.items.length ? (
-              <p className="rounded-xl border border-[var(--line)] bg-slate-950/35 px-3 py-4 text-sm text-[var(--text-soft)]">
-                Keine aktiven Tickets für diese Filter gefunden.
-              </p>
-            ) : null}
-          </div>
-        )}
-
-        <div className="mt-3 flex items-center justify-between text-sm text-[var(--text-soft)]">
-          <p>Gesamt aktiv: {activeTickets?.total || 0}</p>
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              className="btn-secondary-premium rounded-full px-3 py-1"
-              disabled={ticketPage <= 1}
-              onClick={() => setTicketPage((value) => value - 1)}
-            >
-              Zurück
-            </button>
-            <span>Seite {ticketPage} / {activeTickets?.page_count || 1}</span>
-            <button
-              type="button"
-              className="btn-secondary-premium rounded-full px-3 py-1"
-              disabled={ticketPage >= (activeTickets?.page_count || 1)}
-              onClick={() => setTicketPage((value) => value + 1)}
-            >
-              Weiter
-            </button>
-          </div>
-        </div>
-      </GlassCard>
-
-      <GlassCard className="p-4">
-        <h2 className="text-base font-semibold text-white">Heute / Nächste Termine</h2>
-        <div className="mt-3 space-y-3">
-          <div>
-            <p className="text-xs uppercase tracking-wide text-[var(--text-soft)]">Heute fällig</p>
-            <div className="mt-2 space-y-2">
-              {dueToday.slice(0, 3).map((ticket) => (
-                <button
-                  key={`due-${ticket.id}`}
-                  type="button"
-                  className="w-full rounded-xl border border-[var(--line)] bg-slate-950/35 px-3 py-2 text-left transition-all duration-180 hover:border-electric-300/45 hover:bg-slate-900/55"
-                  onClick={() => navigate(`/admin/tickets/${ticket.id}`)}
-                >
-                  <p className="text-sm font-semibold text-white">{formatTicketNumber(ticket.ticket_nummer)}</p>
-                  <p className="text-xs text-[var(--text-soft)]">
-                    {ticket.customer_display_name || ticket.invoice_recipient_name || ticket.kunde_firma || ticket.kunde_name || "nicht angegeben"}
-                  </p>
-                </button>
-              ))}
-              {!dueToday.length ? <p className="text-xs text-[var(--text-soft)]">Keine Tickets heute fällig.</p> : null}
+              <button type="button" onClick={() => goTickets({ sort: "due_asc" })}>Alle →</button>
             </div>
-          </div>
-          <div className="border-t border-[var(--line)] pt-3">
-            <p className="text-xs uppercase tracking-wide text-[var(--text-soft)]">Nächste Termine</p>
-            <div className="mt-2 space-y-2">
+
+            {dueToday.length ? (
+              <div className="dashboard-today-block">
+                <span>Heute fällig</span>
+                {dueToday.slice(0, 2).map((ticket) => (
+                  <button key={ticket.id} type="button" onClick={() => navigate(`/admin/tickets/${ticket.id}`)}>
+                    <strong>{formatTicketNumber(ticket.ticket_nummer)}</strong>
+                    <span>{customerName(ticket)}</span>
+                    <small>{appointmentText(ticket)}</small>
+                  </button>
+                ))}
+              </div>
+            ) : (
+              <div className="dashboard-clear-state"><span aria-hidden="true" /><p>Für heute sind keine Tickets fällig.</p></div>
+            )}
+
+            <div className="dashboard-upcoming-list">
+              <span className="dashboard-list-label">Nächste Termine</span>
               {upcoming.map((ticket) => (
-                <button
-                  key={`upcoming-${ticket.id}`}
-                  type="button"
-                  className="w-full rounded-xl border border-[var(--line)] bg-slate-950/35 px-3 py-2 text-left transition-all duration-180 hover:border-electric-300/45 hover:bg-slate-900/55"
-                  onClick={() => navigate(`/admin/tickets/${ticket.id}`)}
-                >
-                  <p className="text-sm font-semibold text-white">{formatTicketNumber(ticket.ticket_nummer)}</p>
-                  <p className="text-xs text-[var(--text-soft)]">{appointmentText(ticket)}</p>
+                <button key={ticket.id} type="button" onClick={() => navigate(`/admin/tickets/${ticket.id}`)}>
+                  <time>{shortDate(ticket.terminwunsch)}</time>
+                  <span><strong>{customerName(ticket)}</strong><small>{formatTicketNumber(ticket.ticket_nummer)}</small></span>
+                  <span aria-hidden="true">›</span>
                 </button>
               ))}
-              {!upcoming.length ? <p className="text-xs text-[var(--text-soft)]">Keine geplanten Termine vorhanden.</p> : null}
+              {!upcoming.length ? <p className="dashboard-muted">Keine geplanten Termine vorhanden.</p> : null}
             </div>
-          </div>
-        </div>
-      </GlassCard>
+          </GlassCard>
 
+          <GlassCard className="dashboard-side-card">
+            <div className="dashboard-side-head">
+              <div>
+                <p className="dashboard-section-kicker">Vertrieb</p>
+                <h2>ObjektBetreuung</h2>
+              </div>
+              <button type="button" onClick={() => navigate("/admin/interessenten")}>Öffnen →</button>
+            </div>
+            <div className="dashboard-inquiry-grid">
+              <div><strong>{dashboard.inquiry_summary.total_open}</strong><span>Offen</span></div>
+              <div className={dashboard.inquiry_summary.follow_up_due > 0 ? "is-due" : ""}><strong>{dashboard.inquiry_summary.follow_up_due}</strong><span>Wiedervorlagen</span></div>
+            </div>
+            <p className="dashboard-inquiry-last">Letzte Anfrage: {dashboard.inquiry_summary.latest_requested_at ? dateTime(dashboard.inquiry_summary.latest_requested_at) : "Keine Anfrage vorhanden"}</p>
+          </GlassCard>
+
+          <GlassCard className="dashboard-side-card">
+            <div className="dashboard-side-head">
+              <div>
+                <p className="dashboard-section-kicker">Verlauf</p>
+                <h2>Letzte Aktivitäten</h2>
+              </div>
+            </div>
+            <div className="dashboard-activity-list">
+              {dashboard.activities.slice(0, 5).map((activity) => (
+                <div key={activity.id}>
+                  <span aria-hidden="true" />
+                  <p><strong>{activity.message}</strong><small>{activity.actor} · {dateTime(activity.created_at)}</small></p>
+                </div>
+              ))}
+              {!dashboard.activities.length ? <p className="dashboard-muted">Noch keine Aktivitäten vorhanden.</p> : null}
+            </div>
+          </GlassCard>
+        </aside>
+      </div>
+
+      {dashboard.agent_messages.length ? (
+        <GlassCard className="dashboard-agent-panel">
+          <div className="dashboard-panel-head">
+            <div>
+              <p className="dashboard-section-kicker">Systemhinweise</p>
+              <h2>Zu prüfende Hinweise</h2>
+              <p>Automatisch erkannte Vorgänge, die eine kurze Kontrolle benötigen.</p>
+            </div>
+            <span className="dashboard-count-badge">{dashboard.agent_messages.length}</span>
+          </div>
+          <div className="dashboard-agent-grid">
+            {dashboard.agent_messages.slice(0, 6).map((message) => (
+              <article key={message.id}>
+                <div>
+                  <span className={`dashboard-risk dashboard-risk-${message.risk_level}`}>Risiko {message.risk_level}</span>
+                  <small>{dateTime(message.created_at)}</small>
+                </div>
+                <p>{message.message}</p>
+                <footer>
+                  {message.ticket_id ? <Button variant="secondary" onClick={() => navigate(`/admin/tickets/${message.ticket_id}`)}>Ticket öffnen</Button> : <span />}
+                  <Button variant="secondary" onClick={() => void handleAgentMessageOk(message.id)}>Erledigt</Button>
+                </footer>
+              </article>
+            ))}
+          </div>
+        </GlassCard>
+      ) : null}
     </div>
   );
 }
