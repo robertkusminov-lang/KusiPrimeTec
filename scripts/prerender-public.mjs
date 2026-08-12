@@ -211,11 +211,11 @@ function renderDocument(route, entry, indexable, follow = false) {
       `  ${modulePreloads.map((href) => `<link rel="modulepreload" href="${href}" />`).join("\n  ")}\n  </head>`,
     );
   }
-  const style = `<style>.prerender-shell{min-height:100vh;background:#070e1a;color:#e7eef9;font:16px/1.6 sans-serif}.prerender-shell header,.prerender-shell main,.prerender-shell footer{max-width:1180px;margin:auto;padding:24px}.prerender-shell nav,.prerender-shell main div,.prerender-shell footer{display:flex;gap:18px;flex-wrap:wrap}.prerender-shell a{color:#7dd3fc}.prerender-shell h1{max-width:900px;font-size:clamp(2rem,6vw,4.5rem);line-height:1.05}.prerender-shell main>p{max-width:780px}</style>`;
-  html = html.replace("</head>", `  ${style}\n  </head>`);
+  const handoff = `<script>document.documentElement.classList.add("js")</script><style>.js #root[data-prerendered="true"]{display:none}.prerender-shell{min-height:100vh;background:#070e1a;color:#e7eef9;font:16px/1.6 sans-serif}.prerender-shell header,.prerender-shell main,.prerender-shell footer{max-width:1180px;margin:auto;padding:24px}.prerender-shell nav,.prerender-shell main div,.prerender-shell footer{display:flex;gap:18px;flex-wrap:wrap}.prerender-shell a{color:#7dd3fc}.prerender-shell h1{max-width:900px;font-size:clamp(2rem,6vw,4.5rem);line-height:1.05}.prerender-shell main>p{max-width:780px}</style>`;
+  html = html.replace("</head>", `  ${handoff}\n  </head>`);
   return html.replace(
     '<div id="root"></div>',
-    `<div id="root" data-prerendered="true">${fallbackMarkup(entry, route)}</div><script>document.getElementById("root")?.replaceChildren();</script>`,
+    `<div id="root" data-prerendered="true">${fallbackMarkup(entry, route)}</div>`,
   );
 }
 

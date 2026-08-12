@@ -88,7 +88,8 @@ describe("public SEO foundation", () => {
     expect(prerender).toContain('rel="canonical"');
     expect(prerender).toContain('property="og:url"');
     expect(prerender).toContain('rel="modulepreload"');
-    expect(prerender).toContain('replaceChildren()');
+    expect(prerender).toContain('document.documentElement.classList.add("js")');
+    expect(prerender).toContain('.js #root[data-prerendered="true"]{display:none}');
     expect(prerender).not.toContain("VITE_SUPABASE_ANON_KEY");
   });
 

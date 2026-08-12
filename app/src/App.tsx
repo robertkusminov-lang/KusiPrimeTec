@@ -96,7 +96,7 @@ function PublicShell() {
 
 function RouteFallback() {
   return (
-    <div className="narrow-frame mt-10">
+    <div className="narrow-frame min-h-[70vh] mt-10">
       <div className="glass page-card rounded-xl2 border border-[var(--line)]">
         <h1 className="section-heading text-xl text-white">Seite wird geladen</h1>
         <LoadingSpinner className="mt-3" label="Modul wird vorbereitet..." />
