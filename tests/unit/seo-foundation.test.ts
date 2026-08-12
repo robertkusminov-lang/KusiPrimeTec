@@ -85,6 +85,8 @@ describe("public SEO foundation", () => {
     expect(prerender).toContain('"/objektbetreuung-remstal"');
     expect(prerender).toContain('"/technischer-stoerungsservice-schorndorf"');
     expect(prerender).toContain('"private-shell.html"');
+    expect(prerender).toContain('rel="canonical"');
+    expect(prerender).toContain('property="og:url"');
     expect(prerender).not.toContain("VITE_SUPABASE_ANON_KEY");
   });
 

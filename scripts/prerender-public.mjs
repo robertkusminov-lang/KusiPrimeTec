@@ -221,7 +221,10 @@ for (const [route, [title, description, h1]] of Object.entries(noindexRoutes)) {
 }
 
 const privateEntry = { title: "Geschützter Bereich | KusiPrimeTec", description: "Geschützter Bereich von KusiPrimeTec.", h1: "Geschützter Bereich", lead: "Bitte melden Sie sich an, um fortzufahren." };
-await writeFile(path.join(distDir, "private-shell.html"), renderDocument("/konto", privateEntry, false), "utf8");
+const privateShell = renderDocument("/konto", privateEntry, false)
+  .replace(/\s*<link\s+rel="canonical"[\s\S]*?\/>/i, "")
+  .replace(/\s*<meta\s+property="og:url"[\s\S]*?\/>/i, "");
+await writeFile(path.join(distDir, "private-shell.html"), privateShell, "utf8");
 
 const notFoundEntry = { title: "Seite nicht gefunden | KusiPrimeTec", description: "Die angeforderte Seite wurde nicht gefunden.", h1: "Seite nicht gefunden", lead: "Bitte prüfen Sie die Adresse oder wählen Sie eine der folgenden Seiten." };
 await writeFile(path.join(distDir, "404.html"), renderDocument("/404", notFoundEntry, false), "utf8");
