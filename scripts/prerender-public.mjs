@@ -6,6 +6,11 @@ const projectRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "
 const distDir = path.join(projectRoot, "app", "dist");
 const baseHtml = await readFile(path.join(distDir, "index.html"), "utf8");
 const origin = "https://kusiprimetec.de";
+const entryPath = baseHtml.match(/<script\s+type="module"[^>]+src="([^"]+)"/)?.[1];
+const entrySource = entryPath ? await readFile(path.join(distDir, entryPath.replace(/^\//, "")), "utf8") : "";
+const appAsset = entrySource.match(/\.\/(App-[A-Za-z0-9_-]+\.js)/)?.[1];
+const appSource = appAsset ? await readFile(path.join(distDir, "assets", appAsset), "utf8") : "";
+const objectCheckAsset = appSource.match(/\.\/(ObjectCheckPage-[A-Za-z0-9_-]+\.js)/)?.[1];
 
 const publicRoutes = {
   "/": {
@@ -196,9 +201,22 @@ function renderDocument(route, entry, indexable, follow = false) {
       html = html.replace("</head>", `  <script type="application/ld+json" data-kpt-route-schema>${JSON.stringify(schemas.length === 1 ? schemas[0] : schemas)}</script>\n  </head>`);
     }
   }
+  const modulePreloads = [
+    appAsset ? `/assets/${appAsset}` : "",
+    route === "/objektcheck" && objectCheckAsset ? `/assets/${objectCheckAsset}` : "",
+  ].filter(Boolean);
+  if (modulePreloads.length) {
+    html = html.replace(
+      "</head>",
+      `  ${modulePreloads.map((href) => `<link rel="modulepreload" href="${href}" />`).join("\n  ")}\n  </head>`,
+    );
+  }
   const style = `<style>.prerender-shell{min-height:100vh;background:#070e1a;color:#e7eef9;font:16px/1.6 sans-serif}.prerender-shell header,.prerender-shell main,.prerender-shell footer{max-width:1180px;margin:auto;padding:24px}.prerender-shell nav,.prerender-shell main div,.prerender-shell footer{display:flex;gap:18px;flex-wrap:wrap}.prerender-shell a{color:#7dd3fc}.prerender-shell h1{max-width:900px;font-size:clamp(2rem,6vw,4.5rem);line-height:1.05}.prerender-shell main>p{max-width:780px}</style>`;
   html = html.replace("</head>", `  ${style}\n  </head>`);
-  return html.replace('<div id="root"></div>', `<div id="root" data-prerendered="true">${fallbackMarkup(entry, route)}</div>`);
+  return html.replace(
+    '<div id="root"></div>',
+    `<div id="root" data-prerendered="true">${fallbackMarkup(entry, route)}</div><script>document.getElementById("root")?.replaceChildren();</script>`,
+  );
 }
 
 async function writeRoute(route, html) {
