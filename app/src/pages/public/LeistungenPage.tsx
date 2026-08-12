@@ -72,6 +72,9 @@ export default function LeistungenPage() {
           Schritte. Darauf kann eine planbare monatliche Betreuung mit digitaler Dokumentation aufbauen.
         </p>
         <div className="mt-5 flex flex-wrap gap-3">
+          <NavLink to="/objektcheck" className="btn-primary-premium inline-flex min-h-12 items-center rounded-full px-5 py-3 text-sm font-semibold">
+            Kostenlosen ObjektCheck starten
+          </NavLink>
           <NavLink to="/objektbetreuung" className="btn-primary-premium inline-flex min-h-12 items-center rounded-full px-5 py-3 text-sm font-semibold">
             Objektbetreuung ansehen
           </NavLink>

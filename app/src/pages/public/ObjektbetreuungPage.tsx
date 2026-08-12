@@ -55,6 +55,12 @@ export default function ObjektbetreuungPage() {
             >
               Preise vergleichen
             </NavLink>
+            <NavLink
+              to="/objektcheck"
+              className="btn-secondary-premium inline-flex min-h-12 items-center rounded-full px-6 py-3 text-sm font-semibold"
+            >
+              Kostenlosen ObjektCheck starten
+            </NavLink>
           </div>
         </div>
       </section>

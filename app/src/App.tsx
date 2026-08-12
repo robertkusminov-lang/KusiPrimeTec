@@ -25,6 +25,10 @@ const HausmeisterservicePage = lazy(loadPublicRoute("/hausmeisterservice"));
 const PreisePage = lazy(loadPublicRoute("/preise"));
 const AblaufPage = lazy(loadPublicRoute("/ablauf"));
 const ObjektbetreuungPage = lazy(loadPublicRoute("/objektbetreuung"));
+const ObjectCheckPage = lazy(loadPublicRoute("/objektcheck"));
+const HausmeisterserviceSchorndorfPage = lazy(loadPublicRoute("/hausmeisterservice-schorndorf"));
+const ObjektbetreuungRemstalPage = lazy(loadPublicRoute("/objektbetreuung-remstal"));
+const TechnischerStoerungsserviceSchorndorfPage = lazy(loadPublicRoute("/technischer-stoerungsservice-schorndorf"));
 const BuchenPage = lazy(loadPublicRoute("/buchen"));
 const EinzelauftragPage = lazy(loadPublicRoute("/einzelauftrag"));
 const ObjektbetreuungAnfragePage = lazy(loadPublicRoute("/objektbetreuung-anfrage"));
@@ -286,6 +290,10 @@ export default function App() {
         <Route path="/leistungen" element={<LazyRoute><LeistungenPage /></LazyRoute>} />
         <Route path="/hausmeisterservice" element={<LazyRoute><HausmeisterservicePage /></LazyRoute>} />
         <Route path="/objektbetreuung" element={<LazyRoute><ObjektbetreuungPage /></LazyRoute>} />
+        <Route path="/objektcheck" element={<LazyRoute><ObjectCheckPage /></LazyRoute>} />
+        <Route path="/hausmeisterservice-schorndorf" element={<LazyRoute><HausmeisterserviceSchorndorfPage /></LazyRoute>} />
+        <Route path="/objektbetreuung-remstal" element={<LazyRoute><ObjektbetreuungRemstalPage /></LazyRoute>} />
+        <Route path="/technischer-stoerungsservice-schorndorf" element={<LazyRoute><TechnischerStoerungsserviceSchorndorfPage /></LazyRoute>} />
         <Route path="/preise" element={<LazyRoute><PreisePage /></LazyRoute>} />
         <Route path="/ablauf" element={<LazyRoute><AblaufPage /></LazyRoute>} />
         <Route path="/buchen" element={<LazyRoute><BuchenPage /></LazyRoute>} />

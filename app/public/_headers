@@ -22,12 +22,6 @@
 /konto/*
   X-Robots-Tag: noindex, nofollow, noarchive
 
-/einzelauftrag
-  X-Robots-Tag: noindex, follow, noarchive
-
-/objektbetreuung-anfrage
-  X-Robots-Tag: noindex, follow, noarchive
-
 /impressum
   X-Robots-Tag: noindex, follow, noarchive
 
@@ -42,3 +36,6 @@
 
 /haftung-koordination
   X-Robots-Tag: noindex, follow, noarchive
+
+/404.html
+  X-Robots-Tag: noindex, nofollow, noarchive

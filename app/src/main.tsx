@@ -8,6 +8,11 @@ async function bootstrap() {
   const root = document.getElementById("root");
   if (!root) return;
 
+  if (root.dataset.prerendered === "true") {
+    root.replaceChildren();
+    root.removeAttribute("data-prerendered");
+  }
+
   try {
     const { default: App } = await import("./App");
     ReactDOM.createRoot(root).render(

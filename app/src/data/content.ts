@@ -6,6 +6,7 @@ export const NAV_PUBLIC = [
   { href: "/", label: "Startseite" },
   { href: "/leistungen", label: "Leistungen" },
   { href: "/objektbetreuung", label: "Objektbetreuung" },
+  { href: "/objektcheck", label: "ObjektCheck" },
   { href: "/preise", label: "Preise" },
   { href: "/ablauf", label: "Ablauf" },
   { href: "/buchen", label: "Anfragen" },

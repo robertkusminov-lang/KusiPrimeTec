@@ -27,10 +27,21 @@ export default function BuchenPage() {
             <h2 className="mt-2 text-xl font-semibold text-white">{entry.title}</h2>
             <p className="mt-3 flex-1 text-sm leading-relaxed text-[var(--text-soft)]">{entry.text}</p>
             <NavLink to={entry.href} className="btn-primary-premium mt-5 inline-flex w-fit rounded-full px-5 py-3 text-sm font-semibold">
-              Öffnen
+              {entry.title}
             </NavLink>
           </article>
         ))}
+      </section>
+
+      <section className="premium-card premium-card-strong page-card">
+        <p className="text-xs uppercase tracking-[0.12em] text-electric-300">Ohne Kontaktdaten starten</p>
+        <h2 className="mt-2 text-xl font-semibold text-white">Objektorganisation kostenlos einordnen</h2>
+        <p className="mt-2 max-w-3xl text-sm leading-relaxed text-[var(--text-soft)]">
+          Der digitale ObjektCheck zeigt in acht kurzen Fragen, wie Kontrollen, Mängel, Vertretung und Fachfirmenkoordination organisiert sind. Das Sofortergebnis ist ohne Anmeldung vollständig sichtbar.
+        </p>
+        <NavLink to="/objektcheck" className="btn-primary-premium mt-5 inline-flex w-fit rounded-full px-5 py-3 text-sm font-semibold">
+          Kostenlosen ObjektCheck starten
+        </NavLink>
       </section>
 
       <section className="premium-card page-card">

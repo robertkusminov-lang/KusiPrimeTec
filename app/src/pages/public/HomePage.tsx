@@ -130,6 +130,9 @@ export default function HomePage() {
               <NavLink to="/einzelauftrag" className="btn-secondary-premium rounded-full px-6 py-3 text-sm font-semibold">
                 Einzelauftrag anfragen
               </NavLink>
+              <NavLink to="/objektcheck" className="btn-secondary-premium rounded-full px-6 py-3 text-sm font-semibold">
+                Kostenlosen ObjektCheck starten
+              </NavLink>
               <a
                 href="https://wa.me/491776364393?text=Hallo%20KusiPrimeTec%2C%20ich%20habe%20eine%20Frage."
                 target="_blank"
@@ -178,7 +181,7 @@ export default function HomePage() {
             <article className="premium-card border border-electric-300/20 p-4">
               <div className="grid gap-3 sm:grid-cols-[220px_1fr] sm:items-center">
                 <div className="aspect-video w-full overflow-hidden rounded-2xl border border-[var(--line)] bg-slate-900/55">
-                  <img src="/Pb.png" alt="Robert Kusminov - KusiPrimeTec" className="h-full w-full object-cover" loading="lazy" />
+                  <img src="/Pb.webp" alt="Robert Kusminov - KusiPrimeTec" width="768" height="512" className="h-full w-full object-cover" loading="lazy" decoding="async" />
                 </div>
                 <div className="space-y-1">
                   <p className="text-xs uppercase tracking-[0.12em] text-electric-300">Ihr Ansprechpartner</p>
@@ -211,7 +214,7 @@ export default function HomePage() {
               <h3 className="text-lg font-semibold text-white">{entry.title}</h3>
               <p className="mt-2 flex-1 text-sm text-[var(--text-soft)]">{entry.text}</p>
               <NavLink to={entry.href} className="btn-secondary-premium mt-4 inline-flex w-fit rounded-full px-4 py-2 text-sm font-semibold">
-                Öffnen
+                {entry.title}
               </NavLink>
             </article>
           ))}

@@ -3,7 +3,11 @@ https://www.kusiprimetec.de/* https://kusiprimetec.de/:splat 301!
 http://kusiprimetec.de/* https://kusiprimetec.de/:splat 301!
 
 /api/* https://pbcqceddxjmhiwzfydvl.supabase.co/functions/v1/:splat 200
-/objektcheck /objektbetreuung 301
 /referenzen / 301
 /ueber-kusiprimetec / 301
-/* /index.html 200
+/konto/anmelden /konto/anmelden/index.html 200
+/admin /private-shell.html 200
+/admin/* /private-shell.html 200
+/konto /private-shell.html 200
+/konto/* /private-shell.html 200
+/* /404.html 404

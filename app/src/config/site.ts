@@ -39,9 +39,15 @@ export const INDEXABLE_PUBLIC_PATHS = [
   "/leistungen",
   "/hausmeisterservice",
   "/objektbetreuung",
+  "/objektcheck",
+  "/hausmeisterservice-schorndorf",
+  "/objektbetreuung-remstal",
+  "/technischer-stoerungsservice-schorndorf",
   "/preise",
   "/ablauf",
   "/buchen",
+  "/einzelauftrag",
+  "/objektbetreuung-anfrage",
 ] as const;
 
 const ROUTE_SEO: Record<string, RouteSeo> = {
@@ -73,6 +79,34 @@ const ROUTE_SEO: Record<string, RouteSeo> = {
     canonicalPath: "/objektbetreuung",
     index: true,
   },
+  "/objektcheck": {
+    title: "Kostenloser ObjektCheck für Gewerbeimmobilien im Remstal | KusiPrimeTec",
+    description:
+      "In 2 Minuten erkennen, wie gut Kontrolle, Mängelmanagement, Vertretung und technische Objektbetreuung organisiert sind. Sofortergebnis ohne Anmeldung.",
+    canonicalPath: "/objektcheck",
+    index: true,
+  },
+  "/hausmeisterservice-schorndorf": {
+    title: "Hausmeisterservice in Schorndorf für Bestandsobjekte | KusiPrimeTec",
+    description:
+      "Objektkontrollen, Mängeldokumentation und zulässige Kleinreparaturen für Gewerbe-, Wohn- und Mischobjekte in Schorndorf und Umgebung.",
+    canonicalPath: "/hausmeisterservice-schorndorf",
+    index: true,
+  },
+  "/objektbetreuung-remstal": {
+    title: "Technische Objektbetreuung im Remstal | KusiPrimeTec",
+    description:
+      "Planbare Objektkontrollen, Mängelmanagement, Vertretung und Fachfirmenkoordination für Unternehmen, Verwaltungen und Eigentümer im Remstal.",
+    canonicalPath: "/objektbetreuung-remstal",
+    index: true,
+  },
+  "/technischer-stoerungsservice-schorndorf": {
+    title: "Technischer Störungsservice in Schorndorf | KusiPrimeTec",
+    description:
+      "Strukturierte Störungsaufnahme, Dokumentation, zulässige Kleinreparaturen und Fachfirmenkoordination für Bestandsobjekte im Raum Schorndorf.",
+    canonicalPath: "/technischer-stoerungsservice-schorndorf",
+    index: true,
+  },
   "/preise": {
     title: "Preise für Objektbetreuung & technischen Service | KusiPrimeTec",
     description:
@@ -98,13 +132,13 @@ const ROUTE_SEO: Record<string, RouteSeo> = {
     title: "Einzelauftrag anfragen | KusiPrimeTec",
     description: "Anfrageformular für einen technischen Einzelauftrag bei KusiPrimeTec.",
     canonicalPath: "/einzelauftrag",
-    index: false,
+    index: true,
   },
   "/objektbetreuung-anfrage": {
     title: "Objektbetreuung anfragen | KusiPrimeTec",
     description: "Anfrageformular für Objektbetreuung und technischen Service bei KusiPrimeTec.",
     canonicalPath: "/objektbetreuung-anfrage",
-    index: false,
+    index: true,
   },
   "/impressum": {
     title: "Impressum | KusiPrimeTec",

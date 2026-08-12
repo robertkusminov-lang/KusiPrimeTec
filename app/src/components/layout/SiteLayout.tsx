@@ -6,7 +6,7 @@ import { ConsentBanner } from "./ConsentBanner";
 
 export function SiteLayout({ children }: PropsWithChildren) {
   const location = useLocation();
-  const showMobileCta = location.pathname !== "/buchen";
+  const showMobileCta = location.pathname !== "/buchen" && location.pathname !== "/objektcheck";
   const [stickyVisible, setStickyVisible] = useState(false);
 
   useEffect(() => {

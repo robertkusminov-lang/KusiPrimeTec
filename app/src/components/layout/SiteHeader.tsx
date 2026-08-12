@@ -85,10 +85,10 @@ export function SiteHeader() {
       <div className="header-frame flex items-center justify-between gap-3 py-3.5 xl:gap-4">
         <NavLink to="/" className="flex min-w-0 flex-1 items-center gap-3 xl:flex-none xl:min-w-[260px] 2xl:min-w-[300px]">
           <div className="logo-glow hero-logo-pulse aspect-square h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-electric-300/25 bg-slate-950/65 p-0.5 md:h-[70px] md:w-[70px]">
-            <img src="/kpt-logo.png" alt="KusiPrimeTec Logo" width="1536" height="1024" className="h-full w-full scale-[1.32] object-contain" loading="eager" fetchPriority="high" />
+            <img src="/kpt-logo.webp" alt="KusiPrimeTec Logo" width="192" height="128" className="h-full w-full scale-[1.32] object-contain" loading="eager" fetchPriority="high" />
           </div>
           <div className="min-w-0">
-            <img src="/publickpt-wordmark.png" alt="KusiPrimeTec" width="830" height="144" className="hidden h-10 w-auto max-w-full object-contain sm:block xl:h-12 2xl:h-[64px]" loading="eager" />
+            <img src="/publickpt-wordmark.webp" alt="KusiPrimeTec" width="830" height="144" className="hidden h-10 w-auto max-w-full object-contain sm:block xl:h-12 2xl:h-[64px]" loading="eager" decoding="async" />
             <p className="font-semibold sm:hidden">KusiPrimeTec</p>
             <p className="mt-0.5 text-xs font-semibold leading-snug text-electric-100 sm:text-sm md:text-base">{COMPANY_PROFILE.tagline}</p>
           </div>
